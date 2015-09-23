@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.1.0
+***	 Version: 0.2.0
 ***	 Purpose: Simple, yet effective, hashmap implementation
 ***
 ***	 License: MIT 2015
@@ -31,9 +31,9 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.1.0"
+#define HASHMAP_VERSION "0.2.0"
 #define HASHMAP_MAJOR 0
-#define HASHMAP_MINOR 1
+#define HASHMAP_MINOR 2
 #define HASHMAP_REVISION 0
 
 #define HASHMAP_FAILURE -1
@@ -88,11 +88,22 @@ void* hashmap_set(HashMap *h, char *key, void *value);
 void* hashmap_get(HashMap *h, char *key);
 
 /*
+	Prints out some basic stats about the hashmap
+*/
+void hashmap_stats(HashMap *h);
+
+/*
 	Easily add an int, this will malloc everything for the user and will signal
 	to de-allocate the memory on destruction
 */
 int* hashmap_set_int(HashMap *h, char *key, int value);
 
+
+/*
+	Easily add a string, this will malloc everything for the user and will signal
+	to de-allocate the memory on destruction
+*/
+char* hashmap_set_string(HashMap *h, char *key, char *value);
 
 
 #endif /* END HASHMAP HEADER */

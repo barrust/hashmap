@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
 	hashmap_init(&h);
 
 	char *value = "this is a test of the system...";
-	hashmap_set(&h, "test", value);
+	hashmap_set_string(&h, "test", value);
 	int i;
 	for(i = 0; i < 2048; i++) {
 		char key[5] = {0};
@@ -21,6 +21,18 @@ int main(int argc, char **argv) {
 		if (v == NULL) {
 			printf("failed to insert the int...\n");
 			break;
+		}
+	}
+	printf("Modify elements in the hash\n");
+	// now change it up some
+	for(i = 0; i < 2048; i += 2) {
+		char key[5] = {0};
+		sprintf(key, "%d", i);
+		int *v = (int*)hashmap_get(&h, key);
+		if (v == NULL) {
+			printf("%s is not in the hash\n", key);
+		} else {
+			(*v) = (*v) * 2;
 		}
 	}
 
@@ -39,7 +51,7 @@ int main(int argc, char **argv) {
 	}
 
 	printf("Testing somethings that are not in the hash: \n");
-	for(i = 2048; i < 2048 + 15; i++) {
+	for(i = 2048; i < 2063; i++) {
 		char str[5] = {0};
 		sprintf(str, "%d", i);
 		int *ti = (int *)hashmap_get(&h, str);
@@ -50,5 +62,6 @@ int main(int argc, char **argv) {
 		}
 	}
 
+	hashmap_stats(&h);
 	hashmap_destroy(&h);
 }

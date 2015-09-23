@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.1.0
+***	 Version: 0.2.0
 ***
 ***	 License: MIT 2015
 ***
@@ -14,6 +14,9 @@
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.75       /* arbitrary */
 
+#define IS_USED 0
+#define IS_NOT_USED -1
+
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
@@ -21,6 +24,7 @@ static uint64_t md5_hash_default(char *key);
 static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, short mallocd);
 static float get_fullness(HashMap *h);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
+static uint64_t worst_case(HashMap *h);
 
 
 
@@ -39,7 +43,7 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	// set everything to blank
 	uint64_t i;
 	for (i = 0; i < INITIAL_NUM_ELEMENTS; i++) {
-		h->nodes[i].is_used = -1;
+		h->nodes[i].is_used = IS_NOT_USED;
 		h->nodes[i].key = NULL;
 		h->nodes[i].value = NULL;
 		h->nodes[i].hash = 0; // what would be the odds?
@@ -84,7 +88,7 @@ void* hashmap_get(HashMap *h, char *key) {
 	// starting at idx, search for until there is an unused spot
     int bl = -1;
 	while (bl == -1) {
-		if (h->nodes[i].is_used == -1) { //not found
+		if (h->nodes[i].is_used == IS_NOT_USED) { //not found
 			return NULL;
         } else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
     		return  h->nodes[i].value;
@@ -99,13 +103,27 @@ void* hashmap_get(HashMap *h, char *key) {
 	}
 }
 
+
+void hashmap_stats(HashMap *h) {
+	printf("HashMap:\n\
+	Number Nodes: %" PRIu64 "\n\
+	Used Nodes: %" PRIu64 "\n\
+	Fullness: %f\n\
+	O(n): \n\
+	Worst Case Search: \n", h->number_nodes, h->used_nodes, get_fullness(h));
+}
+
 int* hashmap_set_int(HashMap *h, char *key, int value) {
 	int *ptr = malloc(sizeof(int));
 	*ptr = value;
 	return (int*) __hashmap_set(h, key, ptr, 0);
 }
 
-
+char* hashmap_set_string(HashMap *h, char *key, char *value) {
+	char *ptr = calloc(strlen(value) + 1, sizeof(char));
+	strncpy(ptr, value, strlen(value));
+	return (char*) __hashmap_set(h, key, ptr, 0);
+}
 
 
 
@@ -129,7 +147,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 		hashmap_node *new_nodes = malloc(sizeof(hashmap_node) * new_num_nodes); // double each time
 		uint64_t i;
 		for (i = 0; i < new_num_nodes; i++) {
-			new_nodes[i].is_used = -1;
+			new_nodes[i].is_used = IS_NOT_USED;
 			new_nodes[i].key = NULL;
 			new_nodes[i].value = NULL;
 			new_nodes[i].hash = 0; // what would be the odds?
@@ -138,7 +156,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 		// move over all the original elements
 		uint64_t t_used_nodes = 0;
 		for (i = 0; i < h->number_nodes; i++) {
-			if (h->nodes[i].is_used == 0) {
+			if (h->nodes[i].is_used == IS_USED) {
 				insert_key(new_nodes, h->nodes[i].key, h->nodes[i].value, h->nodes[i].hash, new_num_nodes, &t_used_nodes, h->nodes[i].mallocd);
 				free(h->nodes[i].key);
 			}
@@ -161,7 +179,7 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
 	uint64_t i = idx;
 	int bl = -1;
 	while (bl != 0) {
-		if (nodes[i].is_used == -1) {
+		if (nodes[i].is_used == IS_NOT_USED) {
             nodes[i].is_used = 0;
 			nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
 			strncpy(nodes[i].key, key, strlen(key));
@@ -171,7 +189,7 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
 			*used_nodes = *used_nodes + 1;
 			bl = 0;
 		} else if (nodes[i].hash == hash && strlen(key) == strlen(nodes[i].key) && strncmp(key, nodes[i].key, strlen(key)) == 0) {
-            nodes[i].is_used = 0;
+            nodes[i].is_used = IS_USED;
 			free(nodes[i].key);
 			nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
 			strncpy(nodes[i].key, key, strlen(key));
