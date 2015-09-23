@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.2.0
+***	 Version: 0.2.1
 ***	 Purpose: Simple, yet effective, hashmap implementation
 ***
 ***	 License: MIT 2015
@@ -31,10 +31,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.2.0"
+#define HASHMAP_VERSION "0.2.1"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 2
-#define HASHMAP_REVISION 0
+#define HASHMAP_REVISION 1
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -59,6 +59,7 @@ typedef struct hashmap {
 	hashmap_node *nodes;
 	uint64_t number_nodes;
 	uint64_t used_nodes;
+	unsigned int O;
 	HashFunction hash_function;
 } HashMap;
 

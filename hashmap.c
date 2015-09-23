@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.2.0
+***	 Version: 0.2.1
 ***
 ***	 License: MIT 2015
 ***
@@ -21,7 +21,7 @@
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t md5_hash_default(char *key);
-static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, short mallocd);
+static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, unsigned int* O, short mallocd);
 static float get_fullness(HashMap *h);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static uint64_t worst_case(HashMap *h);
@@ -40,6 +40,7 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	}
 	h->number_nodes = INITIAL_NUM_ELEMENTS;
 	h->used_nodes = 0;
+	h->O = 0;
 	// set everything to blank
 	uint64_t i;
 	for (i = 0; i < INITIAL_NUM_ELEMENTS; i++) {
@@ -69,6 +70,7 @@ void hashmap_destroy(HashMap *h) {
 	free(h->nodes);
 	h->number_nodes = 0;
 	h->used_nodes = 0;
+	h->O = 0;
 	h->hash_function = NULL;
 }
 
@@ -109,8 +111,8 @@ void hashmap_stats(HashMap *h) {
 	Number Nodes: %" PRIu64 "\n\
 	Used Nodes: %" PRIu64 "\n\
 	Fullness: %f\n\
-	O(n): \n\
-	Worst Case Search: \n", h->number_nodes, h->used_nodes, get_fullness(h));
+	O(n): %d\n\
+	Worst Case Search: %" PRIu64 "\n", h->number_nodes, h->used_nodes, get_fullness(h), h->O, worst_case(h));
 }
 
 int* hashmap_set_int(HashMap *h, char *key, int value) {
@@ -155,9 +157,10 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 		}
 		// move over all the original elements
 		uint64_t t_used_nodes = 0;
+		unsigned int O = 0;
 		for (i = 0; i < h->number_nodes; i++) {
 			if (h->nodes[i].is_used == IS_USED) {
-				insert_key(new_nodes, h->nodes[i].key, h->nodes[i].value, h->nodes[i].hash, new_num_nodes, &t_used_nodes, h->nodes[i].mallocd);
+				insert_key(new_nodes, h->nodes[i].key, h->nodes[i].value, h->nodes[i].hash, new_num_nodes, &t_used_nodes, &O, h->nodes[i].mallocd);
 				free(h->nodes[i].key);
 			}
 		}
@@ -166,17 +169,19 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 		h->nodes = new_nodes;
 		h->number_nodes = new_num_nodes;
 		h->used_nodes = t_used_nodes;
+		h->O = O;
 	}
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
 
 	// find the index to insert into
-	return insert_key(h->nodes, key, value, hash, h->number_nodes, &h->used_nodes, mallocd);
+	return insert_key(h->nodes, key, value, hash, h->number_nodes, &h->used_nodes, &h->O, mallocd);
 }
 
-static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, short mallocd) {
+static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, unsigned int* O, short mallocd) {
 	uint64_t idx = hash % number_nodes;
 	uint64_t i = idx;
+	unsigned int o = 1; // it has to at least be 1!
 	int bl = -1;
 	while (bl != 0) {
 		if (nodes[i].is_used == IS_NOT_USED) {
@@ -188,6 +193,9 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
 			nodes[i].mallocd = mallocd;
 			*used_nodes = *used_nodes + 1;
 			bl = 0;
+			if (*O < o) {
+				*O = o;
+			}
 		} else if (nodes[i].hash == hash && strlen(key) == strlen(nodes[i].key) && strncmp(key, nodes[i].key, strlen(key)) == 0) {
             nodes[i].is_used = IS_USED;
 			free(nodes[i].key);
@@ -202,6 +210,7 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
     		nodes[i].value = value;
     		nodes[i].hash = hash;
 			nodes[i].mallocd = mallocd;
+
             return ret;
         } else {
 			i = (i + 1 == number_nodes) ? 0 : i + 1;
@@ -209,10 +218,28 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
 				return NULL;
 			}
 		}
+		o++;
 	}
 	return value;
 }
 
 static float get_fullness(HashMap *h) {
 	return h->used_nodes / (1.0 * h->number_nodes);
+}
+
+static uint64_t worst_case(HashMap *h) {
+	uint64_t i;
+	uint64_t r = 0;
+	uint64_t cur = 0;
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].is_used == IS_USED) {
+			cur++;
+		} else {
+			if (r < cur) {
+				r = cur;
+			}
+			cur = 0;
+		}
+	}
+	return r;
 }
