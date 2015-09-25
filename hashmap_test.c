@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
+
 	printf("Modify elements in the hash\n");
 	// now change it up some
 	for(i = 0; i < 2048; i += 2) {

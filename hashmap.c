@@ -21,10 +21,13 @@
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t md5_hash_default(char *key);
-static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, unsigned int* O, short mallocd);
-static float get_fullness(HashMap *h);
+static void __setup_nodes(hashmap_node *nodes, uint64_t length);
+static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
+static float get_fullness(HashMap *h);
 static uint64_t worst_case(HashMap *h);
+static float average_case_O(HashMap *h);
+static uint64_t max_case_O(HashMap *h);
 
 
 
@@ -40,16 +43,8 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	}
 	h->number_nodes = INITIAL_NUM_ELEMENTS;
 	h->used_nodes = 0;
-	h->O = 0;
 	// set everything to blank
-	uint64_t i;
-	for (i = 0; i < INITIAL_NUM_ELEMENTS; i++) {
-		h->nodes[i].is_used = IS_NOT_USED;
-		h->nodes[i].key = NULL;
-		h->nodes[i].value = NULL;
-		h->nodes[i].hash = 0; // what would be the odds?
-		h->nodes[i].mallocd = -1;
-	}
+	__setup_nodes(h->nodes, h->number_nodes);
 	if (hash_function == NULL) {
 		h->hash_function = &md5_hash_default;
 	} else {
@@ -70,7 +65,6 @@ void hashmap_destroy(HashMap *h) {
 	free(h->nodes);
 	h->number_nodes = 0;
 	h->used_nodes = 0;
-	h->O = 0;
 	h->hash_function = NULL;
 }
 
@@ -111,8 +105,10 @@ void hashmap_stats(HashMap *h) {
 	Number Nodes: %" PRIu64 "\n\
 	Used Nodes: %" PRIu64 "\n\
 	Fullness: %f\n\
-	O(n): %d\n\
-	Worst Case Search: %" PRIu64 "\n", h->number_nodes, h->used_nodes, get_fullness(h), h->O, worst_case(h));
+	Average O(n): %f\n\
+	Max O(n): %" PRIu64 "\n\
+	Max Consecutive Buckets Used: %" PRIu64 "\n", h->number_nodes, h->used_nodes,
+	get_fullness(h), average_case_O(h), max_case_O(h), worst_case(h));
 }
 
 int* hashmap_set_int(HashMap *h, char *key, int value) {
@@ -142,78 +138,50 @@ static uint64_t md5_hash_default(char *key) {
 	return (uint64_t) *(uint64_t *)digest % UINT64_MAX;
 }
 
-static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
-	// check to see if we need to expand the hashmap
-	if (get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		uint64_t new_num_nodes = h->number_nodes * 2;
-		hashmap_node *new_nodes = malloc(sizeof(hashmap_node) * new_num_nodes); // double each time
-		uint64_t i;
-		for (i = 0; i < new_num_nodes; i++) {
-			new_nodes[i].is_used = IS_NOT_USED;
-			new_nodes[i].key = NULL;
-			new_nodes[i].value = NULL;
-			new_nodes[i].hash = 0; // what would be the odds?
-			new_nodes[i].mallocd = -1;
-		}
-		// move over all the original elements
-		uint64_t t_used_nodes = 0;
-		unsigned int O = 0;
-		for (i = 0; i < h->number_nodes; i++) {
-			if (h->nodes[i].is_used == IS_USED) {
-				insert_key(new_nodes, h->nodes[i].key, h->nodes[i].value, h->nodes[i].hash, new_num_nodes, &t_used_nodes, &O, h->nodes[i].mallocd);
-				free(h->nodes[i].key);
-			}
-		}
-		// move everthing over
-		free(h->nodes);
-		h->nodes = new_nodes;
-		h->number_nodes = new_num_nodes;
-		h->used_nodes = t_used_nodes;
-		h->O = O;
+static void __setup_nodes(hashmap_node *nodes, uint64_t length) {
+	uint64_t i;
+	for (i = 0; i < length; i++) {
+		nodes[i].is_used = IS_NOT_USED;
+		nodes[i].key = NULL;
+		nodes[i].value = NULL;
+		nodes[i].hash = 0; // what would be the odds?
+		nodes[i].mallocd = -1;
+		nodes[i].O = 0;
 	}
-	// get the hash value
-	uint64_t hash = h->hash_function(key);
-
-	// find the index to insert into
-	return insert_key(h->nodes, key, value, hash, h->number_nodes, &h->used_nodes, &h->O, mallocd);
 }
 
-static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t hash, uint64_t number_nodes, uint64_t* used_nodes, unsigned int* O, short mallocd) {
-	uint64_t idx = hash % number_nodes;
+// TODO: Rethink this... should probably reorganize if there isn't a collision (I.e., when a new key collides in a bucket that it shouldn't need to)
+static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd) {
+	uint64_t idx = hash % h->number_nodes;
 	uint64_t i = idx;
 	unsigned int o = 1; // it has to at least be 1!
 	int bl = -1;
 	while (bl != 0) {
-		if (nodes[i].is_used == IS_NOT_USED) {
-            nodes[i].is_used = 0;
-			nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
-			strncpy(nodes[i].key, key, strlen(key));
-    		nodes[i].value = value;
-    		nodes[i].hash = hash;
-			nodes[i].mallocd = mallocd;
-			*used_nodes = *used_nodes + 1;
+		if (h->nodes[i].is_used == IS_NOT_USED) {
+            h->nodes[i].is_used = IS_USED;
+			h->nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
+			strncpy(h->nodes[i].key, key, strlen(key));
+    		h->nodes[i].value = value;
+    		h->nodes[i].hash = hash;
+			h->nodes[i].mallocd = mallocd;
+			h->used_nodes++;
+			h->nodes[i].O = o;
 			bl = 0;
-			if (*O < o) {
-				*O = o;
-			}
-		} else if (nodes[i].hash == hash && strlen(key) == strlen(nodes[i].key) && strncmp(key, nodes[i].key, strlen(key)) == 0) {
-            nodes[i].is_used = IS_USED;
-			free(nodes[i].key);
-			nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
-			strncpy(nodes[i].key, key, strlen(key));
+		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
+            h->nodes[i].is_used = IS_USED;
 			void *ret = NULL;
-			if (nodes[i].mallocd == 0) { // we need to free it...
-				free(nodes[i].value);
+			if (h->nodes[i].mallocd == 0) { // we need to free it...
+				free(h->nodes[i].value);
 			} else {
-				ret = nodes[i].value;
+				ret = h->nodes[i].value;
 			}
-    		nodes[i].value = value;
-    		nodes[i].hash = hash;
-			nodes[i].mallocd = mallocd;
+    		h->nodes[i].value = value;
+    		h->nodes[i].hash = hash;
+			h->nodes[i].mallocd = mallocd;
 
             return ret;
         } else {
-			i = (i + 1 == number_nodes) ? 0 : i + 1;
+			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
 			if (i == idx) {	/* We can only have this happen if there are NO open locations */
 				return NULL;
 			}
@@ -222,6 +190,36 @@ static void* insert_key(hashmap_node *nodes, char *key, void *value, uint64_t ha
 	}
 	return value;
 }
+
+
+static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
+	// check to see if we need to expand the hashmap
+	if (get_fullness(h) >= MAX_FULLNESS_PERCENT) {
+		uint64_t num_nodes = h->number_nodes;
+		hashmap_node *old_nodes = h->nodes;
+		h->nodes = NULL;
+		h->number_nodes = num_nodes * 2;
+		h->used_nodes = 0;
+		h->nodes = malloc(sizeof(hashmap_node) * h->number_nodes); // double each time
+		__setup_nodes(h->nodes, h->number_nodes);
+		// move over all the original elements
+		unsigned int O = 0;
+		uint64_t i;
+		for (i = 0; i < num_nodes; i++) {
+			if (old_nodes[i].is_used == IS_USED) {
+				printf("key: %s\n", old_nodes[i].key);
+				__insert_key(h, old_nodes[i].key, old_nodes[i].value, old_nodes[i].hash, old_nodes[i].mallocd);
+				free(old_nodes[i].key);
+			}
+		}
+		// final cleanup
+		free(old_nodes);
+	}
+	// get the hash value
+	uint64_t hash = h->hash_function(key);
+	return __insert_key(h, key, value, hash, mallocd);;
+}
+
 
 static float get_fullness(HashMap *h) {
 	return h->used_nodes / (1.0 * h->number_nodes);
@@ -242,4 +240,26 @@ static uint64_t worst_case(HashMap *h) {
 		}
 	}
 	return r;
+}
+
+static float average_case_O(HashMap *h) {
+	uint64_t i;
+	uint64_t sum = 0;
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].is_used == IS_USED) {
+			sum += h->nodes[i].O;
+		}
+	}
+	return sum / (h->used_nodes * 1.0);
+}
+
+static uint64_t max_case_O(HashMap *h) {
+	uint64_t i;
+	uint64_t max = 1; // by definition
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].O > max) {
+			max = h->nodes[i].O;
+		}
+	}
+	return max;
 }

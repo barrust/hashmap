@@ -53,13 +53,13 @@ typedef struct hashmap_node {
 	short is_used;
 	uint64_t hash;
 	short mallocd; /* signals if need to deallocate the memory */
+	int O;
 } hashmap_node;
 
 typedef struct hashmap {
 	hashmap_node *nodes;
 	uint64_t number_nodes;
 	uint64_t used_nodes;
-	unsigned int O;
 	HashFunction hash_function;
 } HashMap;
 
