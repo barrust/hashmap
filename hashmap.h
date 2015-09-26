@@ -84,6 +84,13 @@ void hashmap_destroy(HashMap *h);
 void* hashmap_set(HashMap *h, char *key, void *value);
 
 /*
+ 	Adds the key to the hashmap or updates the key if already present. Also
+	signals to the system to do a simple 'free' command on the value on
+	destruction. 
+*/
+void* hashmap_set_alt(HashMap *h, char *key, void * value);
+
+/*
 	Returns the pointer to the value of the found key, or NULL if not found
 */
 void* hashmap_get(HashMap *h, char *key);

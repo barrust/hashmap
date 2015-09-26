@@ -70,6 +70,10 @@ void* hashmap_set(HashMap *h, char *key, void *value) {
 	return __hashmap_set(h, key, value, -1);
 }
 
+void* hashmap_set_alt(HashMap *h, char *key, void * value) {
+	return __hashmap_set(h, key, value, 0);
+}
+
 void* hashmap_get(HashMap *h, char *key) {
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
@@ -106,6 +110,9 @@ void hashmap_stats(HashMap *h) {
 	get_fullness(h), average_case_O(h), max_case_O(h), worst_case(h));
 }
 
+/*******************************************************************************
+***		UTILITY INSERTS
+*******************************************************************************/
 int* hashmap_set_int(HashMap *h, char *key, int value) {
 	int *ptr = malloc(sizeof(int));
 	*ptr = value;
