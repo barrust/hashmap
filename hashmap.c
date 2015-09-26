@@ -3,13 +3,14 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.2.1
+***	 Version: 0.3.0
 ***
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
 
 #include "hashmap.h"
+#include <stdbool.h>
 
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.75       /* arbitrary */
@@ -45,11 +46,7 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	h->used_nodes = 0;
 	// set everything to blank
 	__setup_nodes(h->nodes, h->number_nodes);
-	if (hash_function == NULL) {
-		h->hash_function = &md5_hash_default;
-	} else {
-		h->hash_function = hash_function;
-	}
+	h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
 
 	return HASHMAP_SUCCESS;
 }
@@ -82,15 +79,13 @@ void* hashmap_get(HashMap *h, char *key) {
 	uint64_t i = idx;
 
 	// starting at idx, search for until there is an unused spot
-    int bl = -1;
-	while (bl == -1) {
+	while (true) {
 		if (h->nodes[i].is_used == IS_NOT_USED) { //not found
 			return NULL;
         } else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
     		return  h->nodes[i].value;
-        }
-        // lets see if we need to continue or if we have already gone all the way around
-        if (bl == -1) {
+        } else {
+	        // lets see if we need to continue or if we have already gone all the way around
 			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
 			if (i == idx) {	/* We can only have this happen if there are NO open locations */
 				return NULL;
@@ -155,8 +150,7 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 	uint64_t idx = hash % h->number_nodes;
 	uint64_t i = idx;
 	unsigned int o = 1; // it has to at least be 1!
-	int bl = -1;
-	while (bl != 0) {
+	while (true) {
 		if (h->nodes[i].is_used == IS_NOT_USED) {
             h->nodes[i].is_used = IS_USED;
 			h->nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
@@ -166,12 +160,13 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 			h->nodes[i].mallocd = mallocd;
 			h->used_nodes++;
 			h->nodes[i].O = o;
-			bl = 0;
+			return value;
 		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
             h->nodes[i].is_used = IS_USED;
 			void *ret = NULL;
 			if (h->nodes[i].mallocd == 0) { // we need to free it...
 				free(h->nodes[i].value);
+				ret = value;
 			} else {
 				ret = h->nodes[i].value;
 			}
@@ -226,9 +221,7 @@ static float get_fullness(HashMap *h) {
 }
 
 static uint64_t worst_case(HashMap *h) {
-	uint64_t i;
-	uint64_t r = 0;
-	uint64_t cur = 0;
+	uint64_t i, r = 0, cur = 0;
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i].is_used == IS_USED) {
 			cur++;
@@ -243,8 +236,7 @@ static uint64_t worst_case(HashMap *h) {
 }
 
 static float average_case_O(HashMap *h) {
-	uint64_t i;
-	uint64_t sum = 0;
+	uint64_t i, sum = 0;
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i].is_used == IS_USED) {
 			sum += h->nodes[i].O;
@@ -254,8 +246,7 @@ static float average_case_O(HashMap *h) {
 }
 
 static uint64_t max_case_O(HashMap *h) {
-	uint64_t i;
-	uint64_t max = 1; // by definition
+	uint64_t i, max = 1; // by definition
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i].O > max) {
 			max = h->nodes[i].O;
