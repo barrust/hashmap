@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.3.0
+***	 Version: 0.3.1
 ***	 Purpose: Simple, yet effective, hashmap implementation
 ***
 ***	 License: MIT 2015
@@ -12,7 +12,7 @@
 ***
 ***	 Usage:
 ***
-***	Required Compile Flags: -lcrypto
+***	 Required Compile Flags: -lcrypto
 ***
 *******************************************************************************/
 
@@ -32,10 +32,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.3.0"
+#define HASHMAP_VERSION "0.3.1"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 3
-#define HASHMAP_REVISION 0
+#define HASHMAP_REVISION 1
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -55,6 +55,7 @@ typedef struct hashmap_node {
 	uint64_t hash;
 	short mallocd; /* signals if need to deallocate the memory */
 	int O;
+	uint64_t idx;  /* store what node it should be part of */
 } hashmap_node;
 
 typedef struct hashmap {

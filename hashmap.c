@@ -3,13 +3,14 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.3.0
+***	 Version: 0.3.1
 ***
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
 
 #include "hashmap.h"
+#include "sorting_algos.h"
 
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.75       /* arbitrary */
@@ -27,6 +28,8 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static float __get_fullness(HashMap *h);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o);
 
+static int __get_hash_collisions(HashMap *h);
+static int __get_idx_collisions(HashMap *h);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -105,6 +108,8 @@ void* hashmap_get(HashMap *h, char *key) {
 void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg;
+	int hc = __get_hash_collisions(h);
+	int ic = __get_idx_collisions(h);
 	__get_stats(h, &wc, &max, &avg);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
@@ -112,8 +117,10 @@ void hashmap_stats(HashMap *h) {
 	Fullness: %f\n\
 	Average O(n): %f\n\
 	Max O(n): %" PRIu64 "\n\
-	Max Consecutive Buckets Used: %" PRIu64 "\n", h->number_nodes, h->used_nodes,
-	__get_fullness(h), avg, max, wc);
+	Max Consecutive Buckets Used: %" PRIu64 "\n\
+	Hash Collisions: %d\n\
+	Index Collisions: %d\n", h->number_nodes, h->used_nodes,
+	__get_fullness(h), avg, max, wc, hc, ic);
 }
 
 /*******************************************************************************
@@ -154,9 +161,10 @@ static void __setup_nodes(hashmap_node *nodes, uint64_t length) {
 		nodes[i].is_used = IS_NOT_USED;
 		nodes[i].key = NULL;
 		nodes[i].value = NULL;
-		nodes[i].hash = 0; // what would be the odds?
+		nodes[i].hash = 0;
 		nodes[i].mallocd = -1;
 		nodes[i].O = 0;
+		nodes[i].idx = 0;
 	}
 }
 
@@ -175,6 +183,7 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 			h->nodes[i].mallocd = mallocd;
 			h->used_nodes++;
 			h->nodes[i].O = o;
+			h->nodes[i].idx = idx;
 			return value;
 		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
             h->nodes[i].is_used = IS_USED;
@@ -226,7 +235,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	}
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
-	return __insert_key(h, key, value, hash, mallocd);;
+	return __insert_key(h, key, value, hash, mallocd);
 }
 
 
@@ -256,4 +265,50 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 	*worst_case = wc;
 	*max_big_o = max;
 	*avg_big_o = sum / (h->used_nodes * 1.0);
+}
+
+
+
+static int __get_hash_collisions(HashMap *h) {
+	int collisions = 0;
+	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
+	uint64_t i, j = 0;
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].is_used == IS_USED) {
+			hashes[j++] = h->nodes[i].hash;
+		}
+	}
+	// sort the hashes
+	merge_sort(hashes, h->used_nodes);
+	// then do some maths to see if there are actual collisions
+	for (i = 0; i < h->used_nodes - 1; i++) {
+		if(hashes[i] == hashes[i + 1]) {
+			collisions++;
+		}
+	}
+	free(hashes);
+	return collisions;
+}
+
+
+static int __get_idx_collisions(HashMap *h) {
+	int idx_col = 0;
+	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
+	uint64_t i, j = 0;
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].is_used == IS_USED) {
+			idxs[j++] = h->nodes[i].idx;
+		}
+	}
+	// sort the hashes
+	merge_sort(idxs, h->used_nodes);
+	// then do some maths to see if there are actual collisions
+	for (i = 0; i < h->used_nodes - 1; i++) {
+		//printf("%" PRIu64 "\n", idxs[i]);
+		if(idxs[i] == idxs[i + 1]) {
+			idx_col++;
+		}
+	}
+	free(idxs);
+	return idx_col;
 }
