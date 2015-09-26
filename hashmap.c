@@ -92,10 +92,10 @@ void* hashmap_get(HashMap *h, char *key) {
 	while (true) {
 		if (h->nodes[i].is_used == IS_NOT_USED) { //not found
 			return NULL;
-        } else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
-    		return  h->nodes[i].value;
-        } else {
-	        // lets see if we need to continue or if we have already gone all the way around
+		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
+			return  h->nodes[i].value;
+		} else {
+			// lets see if we need to continue or if we have already gone all the way around
 			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
 			if (i == idx) {	/* We can only have this happen if there are NO open locations */
 				return NULL;
@@ -175,18 +175,18 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 	unsigned int o = 1; // it has to at least be 1!
 	while (true) {
 		if (h->nodes[i].is_used == IS_NOT_USED) {
-            h->nodes[i].is_used = IS_USED;
+			h->nodes[i].is_used = IS_USED;
 			h->nodes[i].key = calloc(strlen(key) + 1, sizeof(char));
 			strncpy(h->nodes[i].key, key, strlen(key));
-    		h->nodes[i].value = value;
-    		h->nodes[i].hash = hash;
+			h->nodes[i].value = value;
+			h->nodes[i].hash = hash;
 			h->nodes[i].mallocd = mallocd;
 			h->used_nodes++;
 			h->nodes[i].O = o;
 			h->nodes[i].idx = idx;
 			return value;
 		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
-            h->nodes[i].is_used = IS_USED;
+			h->nodes[i].is_used = IS_USED;
 			void *ret = NULL;
 			if (h->nodes[i].mallocd == 0) { // we need to free it...
 				free(h->nodes[i].value);
@@ -194,12 +194,11 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 			} else {
 				ret = h->nodes[i].value;
 			}
-    		h->nodes[i].value = value;
-    		h->nodes[i].hash = hash;
+			h->nodes[i].value = value;
+			h->nodes[i].hash = hash;
 			h->nodes[i].mallocd = mallocd;
-
             return ret;
-        } else {
+		} else {
 			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
 			if (i == idx) {	/* We can only have this happen if there are NO open locations */
 				return NULL;
