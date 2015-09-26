@@ -23,6 +23,7 @@
 #include <inttypes.h>       /* PRIu64 */
 #include <stdio.h>          /* printf */
 #include <string.h>         /* strncpy, strncmp */
+#include <stdbool.h>        /* boolean: true false */
 #include <openssl/md5.h>
 
 
@@ -86,7 +87,7 @@ void* hashmap_set(HashMap *h, char *key, void *value);
 /*
  	Adds the key to the hashmap or updates the key if already present. Also
 	signals to the system to do a simple 'free' command on the value on
-	destruction. 
+	destruction.
 */
 void* hashmap_set_alt(HashMap *h, char *key, void * value);
 
