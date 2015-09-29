@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.3.2
+***	 Version: 0.3.4
 ***
 ***	 License: MIT 2015
 ***
@@ -27,7 +27,7 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static float __get_fullness(HashMap *h);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o);
-static void  __get_collisions_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
+static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -107,7 +107,7 @@ void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg;
 	unsigned int hc, ic;
-	__get_collisions_stats(h, &hc, &ic);
+	__get_collision_stats(h, &hc, &ic);
 	__get_stats(h, &wc, &max, &avg);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
@@ -280,7 +280,7 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 
 
 // consolidate to save some loops
-static void __get_collisions_stats(HashMap *h, unsigned int *hash, unsigned int *idx) {
+static void __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx) {
 	unsigned int hash_col = 0, idx_col = 0;
 	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
 	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
