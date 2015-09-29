@@ -163,7 +163,7 @@ static void __setup_nodes(hashmap_node *nodes, uint64_t length) {
 		nodes[i].value = NULL;
 		nodes[i].hash = 0;
 		nodes[i].mallocd = -1;
-		nodes[i].O = 0;
+		nodes[i].O = 1;
 		nodes[i].idx = 0;
 	}
 }
@@ -246,9 +246,9 @@ static float __get_fullness(HashMap *h) {
 static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o) {
 	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0;
 	for (i = 0; i < h->number_nodes; i++) {
-		// average and worst case
+		sum += h->nodes[i].O;
+		// worst case
 		if (h->nodes[i].is_used == IS_USED) {
-			sum += h->nodes[i].O;
 			cur++;
 		} else {
 			if (wc < cur) {
@@ -263,7 +263,7 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 	}
 	*worst_case = wc;
 	*max_big_o = max;
-	*avg_big_o = sum / (h->used_nodes * 1.0);
+	*avg_big_o = sum / (h->number_nodes * 1.0);
 }
 
 
