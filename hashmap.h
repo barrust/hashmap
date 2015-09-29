@@ -41,6 +41,7 @@
 #define HASHMAP_SUCCESS 0
 
 #define hashmap_get_version()	(HASHMAP_VERSION)
+#define hashmap_number_keys(h)   (h.used_nodes)
 
 
 typedef uint64_t (*HashFunction) (char *key);
@@ -86,7 +87,7 @@ void hashmap_destroy(HashMap *h);
 void* hashmap_set(HashMap *h, char *key, void *value);
 
 /*
- 	Adds the key to the hashmap or updates the key if already present. Also
+	Adds the key to the hashmap or updates the key if already present. Also
 	signals to the system to do a simple 'free' command on the value on
 	destruction.
 */
@@ -96,6 +97,12 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value);
 	Returns the pointer to the value of the found key, or NULL if not found
 */
 void* hashmap_get(HashMap *h, char *key);
+
+/*
+	Returns an array of all keys in the hashmap.
+	NOTE: It is up to the caller to free the array returned.
+*/
+char** hashmap_keys(HashMap *h);
 
 /*
 	Prints out some basic stats about the hashmap

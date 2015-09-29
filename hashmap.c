@@ -121,6 +121,20 @@ void hashmap_stats(HashMap *h) {
 	__get_fullness(h), avg, max, wc, hc, ic);
 }
 
+
+char** hashmap_keys(HashMap *h) {
+	char** keys = calloc(h->used_nodes, sizeof(char*));
+	uint64_t i, j = 0;
+	for (i = 0; i < h->number_nodes; i++) {
+		if (h->nodes[i].is_used == IS_USED) {
+			keys[j] = calloc(strlen(h->nodes[i].key) + 1, sizeof(char));
+			strncpy(keys[j], h->nodes[i].key, strlen(h->nodes[i].key));
+			j++;
+		}
+	}
+	return keys;
+}
+
 /*******************************************************************************
 ***		UTILITY INSERTS
 *******************************************************************************/

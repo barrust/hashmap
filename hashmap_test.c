@@ -4,6 +4,8 @@
 #include "hashmap.h"
 
 
+#define VERBOSE 0 // set to 1 for more output!
+
 int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n", hashmap_get_version());
 
@@ -37,6 +39,19 @@ int main(int argc, char **argv) {
 			(*v) = (*v) * 2;
 		}
 	}
+	// get all the keys and print them out
+	char** keys = hashmap_keys(&h);
+	if (VERBOSE == 1) {
+		printf("got all the keys!\n");
+		for (i = 0; i < hashmap_number_keys(h); i++) {
+			printf("key: %s\n", keys[i]);
+		}
+	}
+	
+	for (i = 0; i < hashmap_number_keys(h); i++) {
+		free(keys[i]);
+	}
+	free(keys);
 
 	char *tmp = (char *)hashmap_get(&h, "test");
 	printf("key: test\tvalue: %s\n", tmp);
