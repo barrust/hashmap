@@ -27,9 +27,7 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static float __get_fullness(HashMap *h);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o);
-
-static int __get_hash_collisions(HashMap *h);
-static int __get_idx_collisions(HashMap *h);
+static void  __get_collisions_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -108,8 +106,8 @@ void* hashmap_get(HashMap *h, char *key) {
 void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg;
-	int hc = __get_hash_collisions(h);
-	int ic = __get_idx_collisions(h);
+	unsigned int hc, ic;
+	__get_collisions_stats(h, &hc, &ic);
 	__get_stats(h, &wc, &max, &avg);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
@@ -267,47 +265,34 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 }
 
 
-
-static int __get_hash_collisions(HashMap *h) {
-	int collisions = 0;
+// consolidate to save some loops
+static void __get_collisions_stats(HashMap *h, unsigned int *hash, unsigned int *idx) {
+	unsigned int hash_col = 0, idx_col = 0;
 	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
-	uint64_t i, j = 0;
-	for (i = 0; i < h->number_nodes; i++) {
-		if (h->nodes[i].is_used == IS_USED) {
-			hashes[j++] = h->nodes[i].hash;
-		}
-	}
-	// sort the hashes
-	merge_sort(hashes, h->used_nodes);
-	// then do some maths to see if there are actual collisions
-	for (i = 0; i < h->used_nodes - 1; i++) {
-		if(hashes[i] == hashes[i + 1]) {
-			collisions++;
-		}
-	}
-	free(hashes);
-	return collisions;
-}
-
-
-static int __get_idx_collisions(HashMap *h) {
-	int idx_col = 0;
 	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
 	uint64_t i, j = 0;
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i].is_used == IS_USED) {
-			idxs[j++] = h->nodes[i].idx;
+			hashes[j] = h->nodes[i].hash;
+			idxs[j] = h->nodes[i].idx;
+			j++;
 		}
 	}
-	// sort the hashes
+	// sort the results
+	merge_sort(hashes, h->used_nodes);
 	merge_sort(idxs, h->used_nodes);
+
 	// then do some maths to see if there are actual collisions
 	for (i = 0; i < h->used_nodes - 1; i++) {
-		//printf("%" PRIu64 "\n", idxs[i]);
+		if(hashes[i] == hashes[i + 1]) {
+			hash_col++;
+		}
 		if(idxs[i] == idxs[i + 1]) {
 			idx_col++;
 		}
 	}
+	free(hashes);
 	free(idxs);
-	return idx_col;
+	*hash = hash_col;
+	*idx = idx_col;
 }
