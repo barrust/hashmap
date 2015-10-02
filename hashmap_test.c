@@ -7,13 +7,14 @@
 #define VERBOSE 0 // set to 1 for more output!
 
 int main(int argc, char **argv) {
-	printf("Testing Hashmap version %s\n", hashmap_get_version());
+	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
 	int num_els = 3048;
 
 	HashMap h;
 	hashmap_init(&h);
 
+	printf("Add strings into the hashmap\n");
 	char *value = "this is a test of the system...";
 	hashmap_set_string(&h, "test", value);
 	int i;
@@ -26,6 +27,7 @@ int main(int argc, char **argv) {
 			break;
 		}
 	}
+	printf("Completed adding strings into the hashmap\n\n");
 
 	printf("Modify elements in the hash\n");
 	// now change it up some
@@ -39,20 +41,24 @@ int main(int argc, char **argv) {
 			(*v) = (*v) * 2;
 		}
 	}
+	printf("Completed modifing elements\n\n");
+
 	// get all the keys and print them out
 	char** keys = hashmap_keys(&h);
 	if (VERBOSE == 1) {
-		printf("got all the keys!\n");
+		printf("Retrieved Keys: printing out\n");
 		for (i = 0; i < hashmap_number_keys(h); i++) {
 			printf("key: %s\n", keys[i]);
 		}
 	}
-	
+	printf("Free the keys returned\n");
 	for (i = 0; i < hashmap_number_keys(h); i++) {
 		free(keys[i]);
 	}
 	free(keys);
+	printf("Completed freeing keys\n\n");
 
+	printf("Test retrieving elements\n");
 	char *tmp = (char *)hashmap_get(&h, "test");
 	printf("key: test\tvalue: %s\n", tmp);
 

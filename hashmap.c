@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.3.4
+***	 Version: 0.3.5
 ***
 ***	 License: MIT 2015
 ***
@@ -26,8 +26,9 @@ static void  __setup_nodes(hashmap_node *nodes, uint64_t length);
 static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static float __get_fullness(HashMap *h);
-static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o);
+static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o);
 static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
+static int   __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -105,20 +106,21 @@ void* hashmap_get(HashMap *h, char *key) {
 
 void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
-	float avg;
+	float avg, avg_used;
 	unsigned int hc, ic;
 	__get_collision_stats(h, &hc, &ic);
-	__get_stats(h, &wc, &max, &avg);
+	__get_stats(h, &wc, &max, &avg, &avg_used);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
 	Used Nodes: %" PRIu64 "\n\
 	Fullness: %f\n\
 	Average O(n): %f\n\
+	Average Used O(n): %f\n\
 	Max O(n): %" PRIu64 "\n\
 	Max Consecutive Buckets Used: %" PRIu64 "\n\
-	Hash Collisions: %d\n\
-	Index Collisions: %d\n", h->number_nodes, h->used_nodes,
-	__get_fullness(h), avg, max, wc, hc, ic);
+	Number Hash Collisions: %d\n\
+	Number Index Collisions: %d\n", h->number_nodes, h->used_nodes,
+	__get_fullness(h), avg, avg_used, max, wc, hc, ic);
 }
 
 
@@ -132,7 +134,7 @@ char** hashmap_keys(HashMap *h) {
 			j++;
 		}
 	}
-	return keys;
+	return keys; // wouldn't it be nice if they were sorted?
 }
 
 /*******************************************************************************
@@ -194,7 +196,7 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 			h->nodes[i].hash = hash;
 			h->nodes[i].mallocd = mallocd;
 			h->used_nodes++;
-			h->nodes[i].O = o;
+			h->nodes[i].O = o; // __calc_big_o(h->number_nodes, i, idx);
 			h->nodes[i].idx = idx;
 			return value;
 		} else if (h->nodes[i].hash == hash && strlen(key) == strlen(h->nodes[i].key) && strncmp(key, h->nodes[i].key, strlen(key)) == 0) {
@@ -255,13 +257,14 @@ static float __get_fullness(HashMap *h) {
 }
 
 
-static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o) {
-	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0;
+static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o) {
+	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0;
 	for (i = 0; i < h->number_nodes; i++) {
 		sum += h->nodes[i].O;
 		// worst case
 		if (h->nodes[i].is_used == IS_USED) {
 			cur++;
+			sum_used += h->nodes[i].O;
 		} else {
 			if (wc < cur) {
 				wc = cur;
@@ -276,6 +279,7 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 	*worst_case = wc;
 	*max_big_o = max;
 	*avg_big_o = sum / (h->number_nodes * 1.0);
+	*avg_used_big_o = sum_used / (h->used_nodes * 1.0);
 }
 
 
@@ -309,4 +313,13 @@ static void __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *
 	free(idxs);
 	*hash = hash_col;
 	*idx = idx_col;
+}
+
+static int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
+	if (i < idx) { // it wrapped around
+		uint64_t t = num_nodes - idx;
+		return i + t + 1;
+	} else {
+		return 1 + i - idx;
+	}
 }
