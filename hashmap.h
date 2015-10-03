@@ -32,10 +32,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.3.5"
+#define HASHMAP_VERSION "0.5.0"
 #define HASHMAP_MAJOR 0
-#define HASHMAP_MINOR 3
-#define HASHMAP_REVISION 5
+#define HASHMAP_MINOR 5
+#define HASHMAP_REVISION 0
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -52,7 +52,6 @@ typedef uint64_t (*HashFunction) (char *key);
 typedef struct hashmap_node {
 	char *key;
 	void *value;
-	short is_used;
 	uint64_t hash;
 	short mallocd; /* signals if need to deallocate the memory */
 	int O;
@@ -60,7 +59,7 @@ typedef struct hashmap_node {
 } hashmap_node;
 
 typedef struct hashmap {
-	hashmap_node *nodes;
+	hashmap_node **nodes;
 	uint64_t number_nodes;
 	uint64_t used_nodes;
 	HashFunction hash_function;

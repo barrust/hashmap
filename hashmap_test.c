@@ -9,7 +9,7 @@
 int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
-	int num_els = 3048;
+	int num_els = 13048;
 
 	HashMap h;
 	hashmap_init(&h);
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
 		sprintf(key, "%d", i);
 		int *v = hashmap_set_int(&h, key, i * 3);
 		if (v == NULL) {
-			printf("failed to insert the int...\n");
+			printf("failed to insert the int: %d\n", i);
 			break;
 		}
 	}
