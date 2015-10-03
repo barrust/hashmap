@@ -9,7 +9,7 @@
 int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
-	int num_els = 5000;
+	int num_els = 8000000;
 
 	HashMap h;
 	hashmap_init(&h);
@@ -31,13 +31,13 @@ int main(int argc, char **argv) {
 
 	printf("Modify elements in the hash\n");
 	// now change it up some
-	for(i = 0; i < num_els; i += 2) {
+	for(i = 0; i < num_els; i++) {
 		char key[5] = {0};
 		sprintf(key, "%d", i);
 		int *v = (int*)hashmap_get(&h, key);
 		if (v == NULL) {
 			printf("%s is not in the hash\n", key);
-		} else {
+		} else if (i % 2 == 0) {
 			(*v) = (*v) * 2;
 		}
 	}

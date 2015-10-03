@@ -21,13 +21,14 @@
 *******************************************************************************/
 static uint64_t md5_hash_default(char *key);
 static inline float __get_fullness(HashMap *h);
+static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
+static int  __relayout_nodes(HashMap *h);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o);
 static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
-static int   __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 
 
 /*******************************************************************************
@@ -93,7 +94,7 @@ void hashmap_stats(HashMap *h) {
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
 	Used Nodes: %" PRIu64 "\n\
-	Fullness: %f\n\
+	Fullness: %f %%\n\
 	Average O(n): %f\n\
 	Average Used O(n): %f\n\
 	Max O(n): %" PRIu64 "\n\
@@ -101,7 +102,7 @@ void hashmap_stats(HashMap *h) {
 	Number Hash Collisions: %d\n\
 	Number Index Collisions: %d\n\
 	Size on disk (bytes): %" PRIu64 "\n", h->number_nodes, h->used_nodes,
-	__get_fullness(h), avg, avg_used, max, wc, hc, ic, size);
+	__get_fullness(h) * 100.0, avg, avg_used, max, wc, hc, ic, size);
 }
 
 
@@ -151,18 +152,58 @@ static uint64_t md5_hash_default(char *key) {
 }
 
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function) {
-	h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
-	if (h->nodes == NULL) {
-		return HASHMAP_FAILURE;
+	uint64_t i;
+	if (num_els == INITIAL_NUM_ELEMENTS) {
+		printf("allocate memory!\n");
+		h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
+		printf("completed allocate memory!\n");
+		if (h->nodes == NULL) {return HASHMAP_FAILURE;}
+		h->number_nodes = num_els;
+		for (i = 0; i < h->number_nodes; i++) {
+			h->nodes[i] = NULL;
+		}
+		h->used_nodes = 0;
+		h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
+	} else {
+		printf("about to realloc to size: %" PRIu64 "\n", num_els);
+		hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
+		if (h->nodes == NULL) {return HASHMAP_FAILURE;}
+		h->nodes = tmp;
+		uint64_t orig_num_els = h->number_nodes;
+		for (i = orig_num_els; i < num_els; i++) {
+			h->nodes[i] = NULL;
+		}
+		h->number_nodes = num_els;
+		int q = 0, j = 0;\
+		// do the relayout as many times as necessary to get it right
+		//while (q == 0) { // TODO: The math to see if this ever needs to be done twice
+			q = __relayout_nodes(h);
+		//	j++;
+		//}
+		printf("done realloc\n");
 	}
-	h->number_nodes = num_els;
-	h->used_nodes = 0;
+	return HASHMAP_SUCCESS;
+}
+
+static int  __relayout_nodes(HashMap *h) {
+	int moved_one = 1;
 	uint64_t i;
 	for (i = 0; i < h->number_nodes; i++) {
-		h->nodes[i] = NULL;
+		if(h->nodes[i] != NULL) {
+			uint64_t id, idx;
+			int error;
+			void *tn = __get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &idx, &id, &error);
+			//printf("new idx: %" PRIu64 "\tnew i: %" PRIu64 "\n", idx, id);
+			if (id != i) {
+				moved_one = 0;
+				h->nodes[id] = h->nodes[i];
+				h->nodes[id]->idx = idx;
+				h->nodes[id]->O = __calc_big_o(h->number_nodes, id, idx);
+				h->nodes[i] = NULL;
+			}
+		}
 	}
-	h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
-	return HASHMAP_SUCCESS;
+	return moved_one;
 }
 
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error) {
@@ -189,20 +230,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
 		uint64_t i, num_nodes = h->number_nodes;
-		hashmap_node **old_nodes = h->nodes;
 		__allocate_hashmap(h, num_nodes * 2, h->hash_function);
-		// move over all the original elements
-		for (i = 0; i < num_nodes; i++) {
-			if (old_nodes[i] != NULL) {
-				uint64_t id, idx;
-				int error;
-				void *tmp = __get_node(h, old_nodes[i]->key, old_nodes[i]->hash, &idx, &id, &error);
-				__assign_node(h, old_nodes[i]->key, old_nodes[i]->value, old_nodes[i]->mallocd, idx, id, old_nodes[i]->hash);
-				free(old_nodes[i]->key);
-				free(old_nodes[i]);
-			}
-		}
-		free(old_nodes);
 	}
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
@@ -293,6 +321,6 @@ static void __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *
 	*idx = idx_col;
 }
 
-static int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
+static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
 	return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
 }
