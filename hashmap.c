@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.5.2
+***	 Version: 0.7.0
 ***
 ***	 License: MIT 2015
 ***
@@ -22,8 +22,8 @@
 static uint64_t md5_hash_default(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
-static int  __relayout_nodes(HashMap *h);
+static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
+static int   __relayout_nodes(HashMap *h);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
@@ -154,9 +154,7 @@ static uint64_t md5_hash_default(char *key) {
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function) {
 	uint64_t i;
 	if (num_els == INITIAL_NUM_ELEMENTS) {
-		printf("allocate memory!\n");
 		h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
-		printf("completed allocate memory!\n");
 		if (h->nodes == NULL) {return HASHMAP_FAILURE;}
 		h->number_nodes = num_els;
 		for (i = 0; i < h->number_nodes; i++) {
@@ -165,7 +163,6 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 		h->used_nodes = 0;
 		h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
 	} else {
-		printf("about to realloc to size: %" PRIu64 "\n", num_els);
 		hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
 		if (h->nodes == NULL) {return HASHMAP_FAILURE;}
 		h->nodes = tmp;
@@ -174,13 +171,9 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 			h->nodes[i] = NULL;
 		}
 		h->number_nodes = num_els;
-		int q = 0, j = 0;\
-		// do the relayout as many times as necessary to get it right
-		//while (q == 0) { // TODO: The math to see if this ever needs to be done twice
-			q = __relayout_nodes(h);
-		//	j++;
-		//}
-		printf("done realloc\n");
+		int q = 0;
+		// TODO: The math to see if this ever needs to be done more than once
+		q = __relayout_nodes(h);
 	}
 	return HASHMAP_SUCCESS;
 }
@@ -193,7 +186,6 @@ static int  __relayout_nodes(HashMap *h) {
 			uint64_t id, idx;
 			int error;
 			void *tn = __get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &idx, &id, &error);
-			//printf("new idx: %" PRIu64 "\tnew i: %" PRIu64 "\n", idx, id);
 			if (id != i) {
 				moved_one = 0;
 				h->nodes[id] = h->nodes[i];
