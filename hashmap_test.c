@@ -9,7 +9,7 @@
 int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
-	int num_els = 13048;
+	int num_els = 5000;
 
 	HashMap h;
 	hashmap_init(&h);
@@ -86,5 +86,8 @@ int main(int argc, char **argv) {
 	}
 
 	hashmap_stats(&h);
+
+	printf("\nFree memory\n");
 	hashmap_destroy(&h);
+	printf("Completed freeing memory\n");
 }

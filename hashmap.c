@@ -20,12 +20,15 @@
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t md5_hash_default(char *key);
-static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd);
+static inline float __get_fullness(HashMap *h);
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
+static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
+static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o);
 static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
 static int   __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static inline float __get_fullness(HashMap *h);
+
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -36,20 +39,7 @@ int hashmap_init(HashMap *h) {
 
 
 int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
-	// init the original nodes
-	h->nodes = (hashmap_node**) malloc(INITIAL_NUM_ELEMENTS * sizeof(hashmap_node*));
-	if (h->nodes == NULL) {
-		return HASHMAP_FAILURE;
-	}
-	h->number_nodes = INITIAL_NUM_ELEMENTS;
-	h->used_nodes = 0;
-	uint64_t i;
-	for (i = 0; i < h->number_nodes; i++) {
-		h->nodes[i] = NULL;
-	}
-	h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
-
-	return HASHMAP_SUCCESS;
+	__allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
 
 
@@ -82,27 +72,10 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 
 
 void* hashmap_get(HashMap *h, char *key) {
-	// get the hash value
-	uint64_t hash = h->hash_function(key);
-
-	// get the index
-	uint64_t idx = hash % h->number_nodes;
-	uint64_t i = idx;
-
-	// starting at idx, search for until there is an unused spot
-	while (true) {
-		if (h->nodes[i] == NULL) { //not found
-			return NULL;
-		} else if (h->nodes[i]->hash == hash && strlen(key) == strlen(h->nodes[i]->key) && strncmp(key, h->nodes[i]->key, strlen(key)) == 0) {
-			return  h->nodes[i]->value;
-		} else {
-			// lets see if we need to continue or if we have already gone all the way around
-			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
-			if (i == idx) {	// We can only have this happen if there are NO open locations
-				return NULL;
-			}
-		}
-	}
+	uint64_t i, idx, hash = h->hash_function(key);
+	i = idx = hash % h->number_nodes;
+	int e;
+	return __get_node(h, key, hash, &idx, &i, &e);
 }
 
 
@@ -177,44 +150,37 @@ static uint64_t md5_hash_default(char *key) {
 	return (uint64_t) *(uint64_t *)digest % UINT64_MAX;
 }
 
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function) {
+	h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
+	if (h->nodes == NULL) {
+		return HASHMAP_FAILURE;
+	}
+	h->number_nodes = num_els;
+	h->used_nodes = 0;
+	uint64_t i;
+	for (i = 0; i < h->number_nodes; i++) {
+		h->nodes[i] = NULL;
+	}
+	h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
+	return HASHMAP_SUCCESS;
+}
 
-/* TODO: Rethink this...
-	Perhaps a better way of building and assigning the nodes to the correct location
-		this could make remove easier...
-		or reorganizing if there is something already in the spot when an idx collision occurs
-*/
-static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd) {
-	uint64_t idx = hash % h->number_nodes;
-	uint64_t i = idx;
-	unsigned int o = 1; // it has to at least be 1!
+static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error) {
+	*error = 0; // no errors
+	*i = *idx = hash % h->number_nodes;
 	while (true) {
-		if (h->nodes[i] == NULL) {
-			h->nodes[i] = malloc(sizeof(hashmap_node));
-			h->nodes[i]->key = calloc(strlen(key) + 1, sizeof(char));
-			strncpy(h->nodes[i]->key, key, strlen(key));
-			h->nodes[i]->value = value;
-			h->nodes[i]->hash = hash;
-			h->nodes[i]->mallocd = mallocd;
-			h->used_nodes++;
-			h->nodes[i]->O = o; // __calc_big_o(h->number_nodes, i, idx);
-			h->nodes[i]->idx = idx;
-			return value;
-		} else if (h->nodes[i]->hash == hash && strlen(key) == strlen(h->nodes[i]->key) && strncmp(key, h->nodes[i]->key, strlen(key)) == 0) {
-			void *ret = NULL;
-			if (h->nodes[i]->mallocd == 0) { // we need to free it...
-				free(h->nodes[i]->value);
-			}
-			h->nodes[i]->value = value;
-			h->nodes[i]->hash = hash;
-			h->nodes[i]->mallocd = mallocd;
-            return value;
+		if (h->nodes[*i] == NULL) { //not found
+			return NULL;
+		} else if (h->nodes[*i]->hash == hash && strlen(key) == strlen(h->nodes[*i]->key) && strncmp(key, h->nodes[*i]->key, strlen(key)) == 0) {
+			return  h->nodes[*i]->value;
 		} else {
-			i = (i + 1 == h->number_nodes) ? 0 : i + 1;
-			if (i == idx) {	// We can only have this happen if there are NO open locations
+			// lets see if we need to continue or if we have already gone all the way around
+			*i = (*i + 1 == h->number_nodes) ? 0 : *i + 1;
+			if (*i == *idx) {	// We can only have this happen if there are NO open locations
+				*error = -1;    // this signifies that the hashmap is full
 				return NULL;
 			}
 		}
-		o++;
 	}
 }
 
@@ -222,38 +188,53 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		//printf("RESIZE!\n\n\n");
-		uint64_t num_nodes = h->number_nodes;
+		uint64_t i, num_nodes = h->number_nodes;
 		hashmap_node **old_nodes = h->nodes;
-		h->nodes = NULL;
-		h->number_nodes = num_nodes * 2;
-		h->used_nodes = 0;
-		h->nodes = malloc(sizeof(hashmap_node*) * h->number_nodes); // double each time
-		uint64_t i;
-		for (i = 0; i < h->number_nodes; i++) {
-			h->nodes[i] = NULL;
-		}
+		__allocate_hashmap(h, num_nodes * 2, h->hash_function);
 		// move over all the original elements
-		unsigned int O = 0;
 		for (i = 0; i < num_nodes; i++) {
 			if (old_nodes[i] != NULL) {
-				// this would be better to just pass pointers around...
-				__insert_key(h, old_nodes[i]->key, old_nodes[i]->value, old_nodes[i]->hash, old_nodes[i]->mallocd);
+				uint64_t id, idx;
+				int error;
+				void *tmp = __get_node(h, old_nodes[i]->key, old_nodes[i]->hash, &idx, &id, &error);
+				__assign_node(h, old_nodes[i]->key, old_nodes[i]->value, old_nodes[i]->mallocd, idx, id, old_nodes[i]->hash);
 				free(old_nodes[i]->key);
 				free(old_nodes[i]);
 			}
 		}
-		// final cleanup
 		free(old_nodes);
 	}
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
-	return __insert_key(h, key, value, hash, mallocd);
+	uint64_t i, idx;
+	int error;
+	void *tmp = __get_node(h, key, hash, &idx, &i, &error);
+	if (tmp == NULL && error == -1) {
+		printf("Error: Unable to insert due to the hashmap being full\n");
+		return NULL;
+	} else  if (tmp != NULL) {
+		if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
+		h->nodes[i]->value = value;
+	} else {
+		__assign_node(h, key, value, mallocd, idx, i, hash);
+	}
+	return value;
 }
 
+static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash) {
+	h->nodes[i] = malloc(sizeof(hashmap_node));;
+	h->nodes[i]->key = calloc(strlen(key) + 1, sizeof(char));
+	strncpy(h->nodes[i]->key, key, strlen(key));
+	h->nodes[i]->value = value;
+	h->nodes[i]->hash = hash;
+	h->nodes[i]->mallocd = mallocd;
+	h->nodes[i]->idx = idx;
+	h->nodes[i]->O = __calc_big_o(h->number_nodes, i, idx);
+	h->used_nodes++;
+}
 
 static inline float __get_fullness(HashMap *h) {
-	return h->used_nodes / (1.0 * h->number_nodes);
+	return h->used_nodes / (float) h->number_nodes;
 }
 
 
@@ -313,10 +294,5 @@ static void __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *
 }
 
 static int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
-	if (i < idx) { // it wrapped around
-		uint64_t t = num_nodes - idx;
-		return i + t + 1;
-	} else {
-		return 1 + i - idx;
-	}
+	return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
 }
