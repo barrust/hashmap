@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.0
+***	 Version: 0.7.1
 ***
 ***	 License: MIT 2015
 ***
@@ -27,9 +27,7 @@ static int   __relayout_nodes(HashMap *h);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
-static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o);
-static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
-
+static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -84,8 +82,7 @@ void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg, avg_used;
 	unsigned int hc, ic;
-	__get_collision_stats(h, &hc, &ic);
-	__get_stats(h, &wc, &max, &avg, &avg_used);
+	__get_stats(h, &wc, &max, &avg, &avg_used, &hc, &ic);
 	// size is the size of a single hashmap
 	// plus the size of the array of pointers
 	// plus the size of the number of allocated nodes
@@ -258,8 +255,11 @@ static inline float __get_fullness(HashMap *h) {
 }
 
 
-static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o) {
-	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0;
+static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
+	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
+	unsigned int hash_col = 0, idx_col = 0;
+	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
+	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i] != NULL) {
 			cur++;
@@ -268,6 +268,9 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 			if (h->nodes[i]->O > max) {
 				max = h->nodes[i]->O;
 			}
+			hashes[j] = h->nodes[i]->hash;
+			idxs[j] = h->nodes[i]->idx;
+			j++;
 		} else {
 			sum += 1;
 			if (wc < cur) { wc = cur; }
@@ -278,22 +281,7 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 	*max_big_o = max;
 	*avg_big_o = sum / (h->number_nodes * 1.0);
 	*avg_used_big_o = sum_used / (h->used_nodes * 1.0);
-}
 
-
-// consolidate to save some loops
-static void __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx) {
-	unsigned int hash_col = 0, idx_col = 0;
-	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
-	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
-	uint64_t i, j = 0;
-	for (i = 0; i < h->number_nodes; i++) {
-		if (h->nodes[i] != NULL) {
-			hashes[j] = h->nodes[i]->hash;
-			idxs[j] = h->nodes[i]->idx;
-			j++;
-		}
-	}
 	// sort the results
 	merge_sort(hashes, h->used_nodes);
 	merge_sort(idxs, h->used_nodes);
