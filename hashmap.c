@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.5.0
+***	 Version: 0.5.1
 ***
 ***	 License: MIT 2015
 ***
@@ -20,13 +20,12 @@
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t md5_hash_default(char *key);
-static void  __setup_nodes(hashmap_node **nodes, uint64_t length);
 static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
-static inline float __get_fullness(HashMap *h);
 static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o);
 static void  __get_collision_stats(HashMap *h, unsigned int *hash, unsigned int *idx);
 static int   __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
+static inline float __get_fullness(HashMap *h);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -44,7 +43,10 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	}
 	h->number_nodes = INITIAL_NUM_ELEMENTS;
 	h->used_nodes = 0;
-	__setup_nodes(h->nodes, h->number_nodes);
+	uint64_t i;
+	for (i = 0; i < h->number_nodes; i++) {
+		h->nodes[i] = NULL;
+	}
 	h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
 
 	return HASHMAP_SUCCESS;
@@ -55,7 +57,7 @@ void hashmap_destroy(HashMap *h) {
 	uint64_t i;
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i] != NULL) {
-			free(h->nodes[i]->key); // no issue of calling free(NULL);
+			free(h->nodes[i]->key);
 			if (h->nodes[i]->mallocd == 0) {
 				free(h->nodes[i]->value);
 			}
@@ -113,6 +115,7 @@ void hashmap_stats(HashMap *h) {
 	// size is the size of a single hashmap
 	// plus the size of the array of pointers
 	// plus the size of the number of allocated nodes
+	// NOTE: this does NOT include the key and value sizes
 	uint64_t size = sizeof(HashMap) + (sizeof(hashmap_node*) * h->number_nodes) + (sizeof(hashmap_node) * h->used_nodes);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
@@ -168,21 +171,18 @@ char* hashmap_set_string(HashMap *h, char *key, char *value) {
 static uint64_t md5_hash_default(char *key) {
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	MD5_CTX md5_ctx;
-	MD5_Init(&(md5_ctx));
-	MD5_Update(&(md5_ctx), key, strlen(key));
-	MD5_Final(digest, &(md5_ctx));
+	MD5_Init(&md5_ctx);
+	MD5_Update(&md5_ctx, key, strlen(key));
+	MD5_Final(digest, &md5_ctx);
 	return (uint64_t) *(uint64_t *)digest % UINT64_MAX;
 }
 
 
-static void __setup_nodes(hashmap_node **nodes, uint64_t length) {
-	uint64_t i;
-	for (i = 0; i < length; i++) {
-		nodes[i] = NULL;
-	}
-}
-
-// TODO: Rethink this... should probably reorganize if there isn't a hash collision (I.e., when a new key collides in a bucket that it shouldn't need to)
+/* TODO: Rethink this...
+	Perhaps a better way of building and assigning the nodes to the correct location
+		this could make remove easier...
+		or reorganizing if there is something already in the spot when an idx collision occurs
+*/
 static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, short mallocd) {
 	uint64_t idx = hash % h->number_nodes;
 	uint64_t i = idx;
@@ -222,17 +222,19 @@ static void* __insert_key(HashMap *h, char *key, void *value, uint64_t hash, sho
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		printf("RESIZE!\n\n\n");
+		//printf("RESIZE!\n\n\n");
 		uint64_t num_nodes = h->number_nodes;
 		hashmap_node **old_nodes = h->nodes;
 		h->nodes = NULL;
 		h->number_nodes = num_nodes * 2;
 		h->used_nodes = 0;
 		h->nodes = malloc(sizeof(hashmap_node*) * h->number_nodes); // double each time
-		__setup_nodes(h->nodes, h->number_nodes);
+		uint64_t i;
+		for (i = 0; i < h->number_nodes; i++) {
+			h->nodes[i] = NULL;
+		}
 		// move over all the original elements
 		unsigned int O = 0;
-		uint64_t i;
 		for (i = 0; i < num_nodes; i++) {
 			if (old_nodes[i] != NULL) {
 				// this would be better to just pass pointers around...
