@@ -58,11 +58,16 @@ int main(int argc, char **argv) {
 	free(keys);
 	printf("Completed freeing keys\n\n");
 
+	for(i = 5; i <= 25; i+=5) { // lets remove 5 keys
+		char str[5] = {0};
+		sprintf(str, "%d", i);
+		hashmap_remove(&h, str);
+	}
 	printf("Test retrieving elements\n");
 	char *tmp = (char *)hashmap_get(&h, "test");
 	printf("key: test\tvalue: %s\n", tmp);
 
-	for(i = 0; i < 15; i++) {
+	for(i = 0; i < 30; i++) {
 		char str[5] = {0};
 		sprintf(str, "%d", i);
 		int *ti = (int *)hashmap_get(&h, str);

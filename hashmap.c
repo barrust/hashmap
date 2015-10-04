@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.1
+***	 Version: 0.7.2
 ***
 ***	 License: MIT 2015
 ***
@@ -75,6 +75,24 @@ void* hashmap_get(HashMap *h, char *key) {
 	i = idx = hash % h->number_nodes;
 	int e;
 	return __get_node(h, key, hash, &idx, &i, &e);
+}
+
+void* hashmap_remove(HashMap *h, char *key) {
+	uint64_t i, idx, hash = h->hash_function(key);
+	i = idx = hash % h->number_nodes;
+	int e;
+	void* tmp = __get_node(h, key, hash, &idx, &i, &e);
+	if (tmp != NULL) {
+		free(h->nodes[i]->key);
+		if (h->nodes[i]->mallocd == 0) {
+			free(h->nodes[i]->value);
+			tmp = NULL;
+		}
+		free(h->nodes[i]);
+		h->nodes[i] = NULL;
+		__relayout_nodes(h); // technically, we only have to do it from position i...
+	}
+	return tmp;
 }
 
 

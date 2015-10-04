@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.1
+***	 Version: 0.7.2
 ***	 Purpose: Simple, yet effective, hashmap implementation
 ***
 ***	 License: MIT 2015
@@ -32,10 +32,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.7.1"
+#define HASHMAP_VERSION "0.7.2"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 7
-#define HASHMAP_REVISION 1
+#define HASHMAP_REVISION 2
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -96,6 +96,13 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value);
 	Returns the pointer to the value of the found key, or NULL if not found
 */
 void* hashmap_get(HashMap *h, char *key);
+
+/*
+ 	Removes a key from the hashmap. NULL will be returned if it is not present.
+	If it is designated to be cleaned up, the memory will be free'd and NULL
+	returned. Otherwise, the pointer to the value will be returned.
+*/
+void* hashmap_remove(HashMap *h, char *key);
 
 /*
 	Returns an array of all keys in the hashmap.
