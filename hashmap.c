@@ -189,7 +189,9 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 		h->number_nodes = num_els;
 		int q = 0;
 		// TODO: The math to see if this ever needs to be done more than once
-		q = __relayout_nodes(h);
+		while (q == 0) {
+			q = __relayout_nodes(h);
+		}
 	}
 	return HASHMAP_SUCCESS;
 }
