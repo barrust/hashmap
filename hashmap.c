@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.2
+***	 Version: 0.7.3
 ***
 ***	 License: MIT 2015
 ***
@@ -27,7 +27,7 @@ static int   __relayout_nodes(HashMap *h);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
-static void  __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
+static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -81,18 +81,19 @@ void* hashmap_remove(HashMap *h, char *key) {
 	uint64_t i, idx, hash = h->hash_function(key);
 	i = idx = hash % h->number_nodes;
 	int e;
-	void* tmp = __get_node(h, key, hash, &idx, &i, &e);
-	if (tmp != NULL) {
+	void* ret = __get_node(h, key, hash, &idx, &i, &e);
+	if (ret != NULL) {
 		free(h->nodes[i]->key);
 		if (h->nodes[i]->mallocd == 0) {
 			free(h->nodes[i]->value);
-			tmp = NULL;
+			ret = NULL;
 		}
 		free(h->nodes[i]);
 		h->nodes[i] = NULL;
+		h->used_nodes--;
 		__relayout_nodes(h); // technically, we only have to do it from position i...
 	}
-	return tmp;
+	return ret;
 }
 
 
@@ -100,7 +101,7 @@ void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg, avg_used;
 	unsigned int hc, ic;
-	__get_stats(h, &wc, &max, &avg, &avg_used, &hc, &ic);
+	__calc_stats(h, &wc, &max, &avg, &avg_used, &hc, &ic);
 	// size is the size of a single hashmap
 	// plus the size of the array of pointers
 	// plus the size of the number of allocated nodes
@@ -273,7 +274,7 @@ static inline float __get_fullness(HashMap *h) {
 }
 
 
-static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
+static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
 	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
 	unsigned int hash_col = 0, idx_col = 0;
 	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
@@ -307,6 +308,7 @@ static void __get_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, f
 	// then do some maths to see if there are actual collisions
 	for (i = 0; i < h->used_nodes - 1; i++) {
 		if(hashes[i] == hashes[i + 1]) {
+			printf("hash: %" PRIu64 "\t%" PRIu64 "\n", hashes[i], hashes[i+1]);
 			hash_col++;
 		}
 		if(idxs[i] == idxs[i + 1]) {
