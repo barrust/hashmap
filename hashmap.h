@@ -14,6 +14,10 @@
 ***
 ***	 Required Compile Flags: -lcrypto
 ***
+***	 TODO: Look into parallelization of the hashmap (openmp)
+***	       Hash Distribution research
+***	       Number required relayouts to ensure no 'lost' keys
+***
 *******************************************************************************/
 
 #ifndef __HASH_MAP_H__
@@ -53,8 +57,8 @@ typedef struct hashmap_node {
 	char *key;
 	void *value;
 	uint64_t hash;
-	uint64_t idx;  /* store what node it should be part of */
-	int O;
+	// uint64_t idx;  /* store what node it should be part of */
+	// int O;
 	short mallocd; /* signals if need to deallocate the memory */
 } hashmap_node;
 

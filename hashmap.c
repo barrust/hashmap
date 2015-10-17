@@ -24,8 +24,8 @@ static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
 static int   __relayout_nodes(HashMap *h);
-static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error);
-static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash);
+static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
+static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
 
@@ -71,17 +71,17 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 
 
 void* hashmap_get(HashMap *h, char *key) {
-	uint64_t i, idx, hash = h->hash_function(key);
-	i = idx = hash % h->number_nodes;
+	uint64_t i, hash = h->hash_function(key);
+	i = hash % h->number_nodes;
 	int e;
-	return __get_node(h, key, hash, &idx, &i, &e);
+	return __get_node(h, key, hash, &i, &e);
 }
 
 void* hashmap_remove(HashMap *h, char *key) {
-	uint64_t i, idx, hash = h->hash_function(key);
-	i = idx = hash % h->number_nodes;
+	uint64_t i, hash = h->hash_function(key);
+	i = hash % h->number_nodes;
 	int e;
-	void* ret = __get_node(h, key, hash, &idx, &i, &e);
+	void* ret = __get_node(h, key, hash, &i, &e);
 	if (ret != NULL) {
 		free(h->nodes[i]->key);
 		if (h->nodes[i]->mallocd == 0) {
@@ -110,7 +110,7 @@ void hashmap_stats(HashMap *h) {
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
 	Used Nodes: %" PRIu64 "\n\
-	Fullness: %f %%\n\
+	Fullness: %f%%\n\
 	Average O(n): %f\n\
 	Average Used O(n): %f\n\
 	Max O(n): %" PRIu64 "\n\
@@ -187,9 +187,10 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 			h->nodes[i] = NULL;
 		}
 		h->number_nodes = num_els;
-		int q = 0;
+		int q = 0, j = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
+			//printf("Relayout Number: %d\n", j++);
 			q = __relayout_nodes(h);
 		}
 	}
@@ -201,14 +202,12 @@ static int  __relayout_nodes(HashMap *h) {
 	uint64_t i;
 	for (i = 0; i < h->number_nodes; i++) {
 		if(h->nodes[i] != NULL) {
-			uint64_t id, idx;
+			uint64_t id;
 			int error;
-			void *tn = __get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &idx, &id, &error);
+			void *tn = __get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &id, &error);
 			if (id != i) {
 				moved_one = 0;
 				h->nodes[id] = h->nodes[i];
-				h->nodes[id]->idx = idx;
-				h->nodes[id]->O = __calc_big_o(h->number_nodes, id, idx);
 				h->nodes[i] = NULL;
 			}
 		}
@@ -216,9 +215,9 @@ static int  __relayout_nodes(HashMap *h) {
 	return moved_one;
 }
 
-static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uint64_t *i, int *error) {
+static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error) {
 	*error = 0; // no errors
-	*i = *idx = hash % h->number_nodes;
+	uint64_t idx = *i = hash % h->number_nodes;
 	while (true) {
 		if (h->nodes[*i] == NULL) { //not found
 			return NULL;
@@ -227,7 +226,7 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *idx, uin
 		} else {
 			// lets see if we need to continue or if we have already gone all the way around
 			*i = (*i + 1 == h->number_nodes) ? 0 : *i + 1;
-			if (*i == *idx) {	// We can only have this happen if there are NO open locations
+			if (*i == idx) {	// We can only have this happen if there are NO open locations
 				*error = -1;    // this signifies that the hashmap is full
 				return NULL;
 			}
@@ -244,9 +243,9 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	}
 	// get the hash value
 	uint64_t hash = h->hash_function(key);
-	uint64_t i, idx;
+	uint64_t i;
 	int error;
-	void *tmp = __get_node(h, key, hash, &idx, &i, &error);
+	void *tmp = __get_node(h, key, hash, &i, &error);
 	if (tmp == NULL && error == -1) {
 		printf("Error: Unable to insert due to the hashmap being full\n");
 		return NULL;
@@ -254,20 +253,18 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 		if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
 		h->nodes[i]->value = value;
 	} else {
-		__assign_node(h, key, value, mallocd, idx, i, hash);
+		__assign_node(h, key, value, mallocd, i, hash);
 	}
 	return value;
 }
 
-static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t idx, uint64_t i, uint64_t hash) {
+static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
 	h->nodes[i] = malloc(sizeof(hashmap_node));;
 	h->nodes[i]->key = calloc(strlen(key) + 1, sizeof(char));
 	strncpy(h->nodes[i]->key, key, strlen(key));
 	h->nodes[i]->value = value;
 	h->nodes[i]->hash = hash;
 	h->nodes[i]->mallocd = mallocd;
-	h->nodes[i]->idx = idx;
-	h->nodes[i]->O = __calc_big_o(h->number_nodes, i, idx);
 	h->used_nodes++;
 }
 
@@ -284,13 +281,15 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
 	for (i = 0; i < h->number_nodes; i++) {
 		if (h->nodes[i] != NULL) {
 			cur++;
-			sum_used += h->nodes[i]->O;
-			sum += h->nodes[i]->O;
-			if (h->nodes[i]->O > max) {
-				max = h->nodes[i]->O;
+			uint64_t idx = h->nodes[i]->hash % h->number_nodes;
+			uint64_t O = __calc_big_o(h->number_nodes, i, idx);
+			sum_used += O;
+			sum += O;
+			if (O > max) {
+				max = O;
 			}
 			hashes[j] = h->nodes[i]->hash;
-			idxs[j] = h->nodes[i]->idx;
+			idxs[j] = idx;
 			j++;
 		} else {
 			sum += 1;
