@@ -31,7 +31,6 @@
 #include <openssl/md5.h>
 
 
-
 #ifdef __APPLE__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
@@ -57,8 +56,6 @@ typedef struct hashmap_node {
 	char *key;
 	void *value;
 	uint64_t hash;
-	// uint64_t idx;  /* store what node it should be part of */
-	// int O;
 	short mallocd; /* signals if need to deallocate the memory */
 } hashmap_node;
 

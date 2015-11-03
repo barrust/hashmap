@@ -36,11 +36,9 @@ int hashmap_init(HashMap *h) {
 	return hashmap_init_alt(h, NULL);
 }
 
-
 int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	__allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
-
 
 void hashmap_destroy(HashMap *h) {
 	uint64_t i;
@@ -59,16 +57,13 @@ void hashmap_destroy(HashMap *h) {
 	h->hash_function = NULL;
 }
 
-
 void* hashmap_set(HashMap *h, char *key, void *value) {
 	return __hashmap_set(h, key, value, -1);
 }
 
-
 void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 	return __hashmap_set(h, key, value, 0);
 }
-
 
 void* hashmap_get(HashMap *h, char *key) {
 	uint64_t i, hash = h->hash_function(key);
@@ -96,7 +91,6 @@ void* hashmap_remove(HashMap *h, char *key) {
 	return ret;
 }
 
-
 void hashmap_stats(HashMap *h) {
 	uint64_t max, wc;
 	float avg, avg_used;
@@ -121,7 +115,6 @@ void hashmap_stats(HashMap *h) {
 	__get_fullness(h) * 100.0, avg, avg_used, max, wc, hc, ic, size);
 }
 
-
 char** hashmap_keys(HashMap *h) {
 	char** keys = calloc(h->used_nodes, sizeof(char*));
 	uint64_t i, j = 0;
@@ -145,19 +138,15 @@ int* hashmap_set_int(HashMap *h, char *key, int value) {
 	return (int*) __hashmap_set(h, key, ptr, 0);
 }
 
-
 char* hashmap_set_string(HashMap *h, char *key, char *value) {
 	char *ptr = calloc(strlen(value) + 1, sizeof(char));
 	strncpy(ptr, value, strlen(value));
 	return (char*) __hashmap_set(h, key, ptr, 0);
 }
 
-
-
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-
 static uint64_t md5_hash_default(char *key) {
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	MD5_CTX md5_ctx;
@@ -234,7 +223,6 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 	}
 }
 
-
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
@@ -271,7 +259,6 @@ static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, ui
 static inline float __get_fullness(HashMap *h) {
 	return h->used_nodes / (float) h->number_nodes;
 }
-
 
 static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
 	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
