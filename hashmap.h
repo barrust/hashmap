@@ -67,7 +67,7 @@ typedef struct hashmap {
 } HashMap;
 
 /* initialize the hashmap using the default hashing function */
-int hashmap_init(HashMap *h);
+#define hashmap_init(h) {hashmap_init_alt(h, NULL);}
 
 /* initialize the hashmap using the provided hashing function */
 int hashmap_init_alt(HashMap *h, HashFunction hash_function);

@@ -32,12 +32,8 @@ static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o,
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
 *******************************************************************************/
-int hashmap_init(HashMap *h) {
-	return hashmap_init_alt(h, NULL);
-}
-
 int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
-	__allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
+	return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
 
 void hashmap_destroy(HashMap *h) {
@@ -96,10 +92,10 @@ void hashmap_stats(HashMap *h) {
 	float avg, avg_used;
 	unsigned int hc, ic;
 	__calc_stats(h, &wc, &max, &avg, &avg_used, &hc, &ic);
-	// size is the size of a single hashmap
-	// plus the size of the array of pointers
-	// plus the size of the number of allocated nodes
-	// NOTE: this does NOT include the key and value sizes
+	/* size is the size of a single hashmap
+	   plus the size of the array of pointers
+	   plus the size of the number of allocated nodes
+	   NOTE: this does NOT include the key and value sizes */
 	uint64_t size = sizeof(HashMap) + (sizeof(hashmap_node*) * h->number_nodes) + (sizeof(hashmap_node) * h->used_nodes);
 	printf("HashMap:\n\
 	Number Nodes: %" PRIu64 "\n\
@@ -296,7 +292,6 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
 	// then do some maths to see if there are actual collisions
 	for (i = 0; i < h->used_nodes - 1; i++) {
 		if(hashes[i] == hashes[i + 1]) {
-			printf("hash: %" PRIu64 "\t%" PRIu64 "\n", hashes[i], hashes[i+1]);
 			hash_col++;
 		}
 		if(idxs[i] == idxs[i + 1]) {
