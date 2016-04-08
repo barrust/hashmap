@@ -12,7 +12,7 @@
 ***
 ***	 Usage:
 ***
-***	 Required Compile Flags: -lcrypto
+***	 Required Compile Flags:
 ***
 ***	 TODO: Look into parallelization of the hashmap (openmp)
 ***	       Hash Distribution research
@@ -28,7 +28,6 @@
 #include <stdio.h>          /* printf */
 #include <string.h>         /* strncpy, strncmp */
 #include <stdbool.h>        /* boolean: true false */
-#include <openssl/md5.h>
 
 
 #ifdef __APPLE__

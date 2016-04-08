@@ -12,6 +12,8 @@
 #include "hashmap.h"
 #include "sorting_algos.h"
 
+
+
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.25       /* arbitrary */
 
@@ -19,7 +21,7 @@
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t md5_hash_default(char *key);
+static uint64_t default_hash(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
@@ -28,6 +30,8 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
+void merge_sort(uint64_t *arr, uint64_t length);
+void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
@@ -143,13 +147,15 @@ char* hashmap_set_string(HashMap *h, char *key, char *value) {
 /*******************************************************************************
 ***		PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t md5_hash_default(char *key) {
-	unsigned char digest[MD5_DIGEST_LENGTH];
-	MD5_CTX md5_ctx;
-	MD5_Init(&md5_ctx);
-	MD5_Update(&md5_ctx, key, strlen(key));
-	MD5_Final(digest, &md5_ctx);
-	return (uint64_t) *(uint64_t *)digest % UINT64_MAX;
+static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+	unsigned char *p = key;
+	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
+	int i, len = strlen(key);
+	for (i = 0; i < len; i++){
+		h = h ^ p[i];
+		h = h * 1099511628211ULL; // FNV_PRIME 64 bit
+	}
+	return h;
 }
 
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function) {
@@ -162,7 +168,7 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 			h->nodes[i] = NULL;
 		}
 		h->used_nodes = 0;
-		h->hash_function = (hash_function == NULL) ? &md5_hash_default : hash_function;
+		h->hash_function = (hash_function == NULL) ? &default_hash : hash_function;
 	} else {
 		hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
 		if (h->nodes == NULL) {return HASHMAP_FAILURE;}
@@ -306,4 +312,35 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
 
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
 	return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
+}
+
+void merge_sort(uint64_t *arr, uint64_t length) {
+	if (length < 2) {
+		return;
+	}
+	uint64_t mid = length / 2;
+	merge_sort(arr, mid);
+	merge_sort(arr + mid, length - mid);
+	__m_sort_merge(arr, length, mid);
+}
+
+
+void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
+	uint64_t *tmp = malloc((length) * sizeof(uint64_t));
+	uint64_t l = 0, r = mid, i = 0;
+	while(l < mid && r < length) { // sort until one half is empty
+		tmp[i++] = (arr[l] > arr[r]) ? arr[r++] : arr[l++];
+	}
+	// move the rest of the remaining array to tmp
+	while (l < mid) {
+		tmp[i++] = arr[l++];
+	}
+	while (r < length) {
+		tmp[i++] = arr[r++];
+	}
+	// move it over
+	for (i = 0; i < length; i++) {
+		arr[i] = tmp[i];
+	}
+	free(tmp);
 }
