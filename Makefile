@@ -1,4 +1,3 @@
-lines=$(shell expr $(shell wc -l < hashmap.c) - 15)
 all: clean
 	gcc hashmap.c hashmap_test.c -o ./dist/hmt
 clean:
