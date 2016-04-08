@@ -10,7 +10,7 @@
 *******************************************************************************/
 
 #include "hashmap.h"
-#include "sorting_algos.h"
+
 
 
 
@@ -30,8 +30,8 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
-void merge_sort(uint64_t *arr, uint64_t length);
-void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
+static void merge_sort(uint64_t *arr, uint64_t length);
+static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS

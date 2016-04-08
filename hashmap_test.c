@@ -1,7 +1,7 @@
 
 
 
-#include "./dist/hashmap.h"
+#include "hashmap.h"
 
 
 #define VERBOSE 0 // set to 1 for more output!
