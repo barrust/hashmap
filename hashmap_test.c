@@ -95,7 +95,4 @@ int main(int argc, char **argv) {
 	printf("\nFree memory\n");
 	hashmap_destroy(&h);
 	printf("Completed freeing memory\n");
-
-	uint64_t size = sizeof(hashmap_node);
-	printf("%" PRIu64 "\n", size);
 }

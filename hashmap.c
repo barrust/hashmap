@@ -30,7 +30,7 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
 static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
-static void merge_sort(uint64_t *arr, uint64_t length);
+static void __merge_sort(uint64_t *arr, uint64_t length);
 static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 
 /*******************************************************************************
@@ -86,7 +86,8 @@ void* hashmap_remove(HashMap *h, char *key) {
 		free(h->nodes[i]);
 		h->nodes[i] = NULL;
 		h->used_nodes--;
-		__relayout_nodes(h); // technically, we only have to do it from position i...
+		// TODO: Refactor relayout nodes to allow for re-layout from a particular position (i)
+		__relayout_nodes(h);
 	}
 	return ret;
 }
@@ -125,7 +126,7 @@ char** hashmap_keys(HashMap *h) {
 			j++;
 		}
 	}
-	return keys; // wouldn't it be nice if they were sorted?
+	return keys;
 }
 
 /*******************************************************************************
@@ -181,7 +182,6 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 		int q = 0, j = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
-			//printf("Relayout Number: %d\n", j++);
 			q = __relayout_nodes(h);
 		}
 	}
@@ -217,8 +217,8 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 		} else {
 			// lets see if we need to continue or if we have already gone all the way around
 			*i = (*i + 1 == h->number_nodes) ? 0 : *i + 1;
-			if (*i == idx) {	// We can only have this happen if there are NO open locations
-				*error = -1;    // this signifies that the hashmap is full
+			if (*i == idx) {	// This can only have this happen if there are NO open locations
+				*error = -1;    // which signifies that the hashmap is full
 				return NULL;
 			}
 		}
@@ -228,7 +228,7 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		uint64_t i, num_nodes = h->number_nodes;
+		uint64_t num_nodes = h->number_nodes;
 		__allocate_hashmap(h, num_nodes * 2, h->hash_function);
 	}
 	// get the hash value
@@ -292,8 +292,8 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
 	*avg_used_big_o = sum_used / (h->used_nodes * 1.0);
 
 	// sort the results
-	merge_sort(hashes, h->used_nodes);
-	merge_sort(idxs, h->used_nodes);
+	__merge_sort(hashes, h->used_nodes);
+	__merge_sort(idxs, h->used_nodes);
 
 	// then do some maths to see if there are actual collisions
 	for (i = 0; i < h->used_nodes - 1; i++) {
@@ -314,13 +314,13 @@ static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
 	return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
 }
 
-void merge_sort(uint64_t *arr, uint64_t length) {
+void __merge_sort(uint64_t *arr, uint64_t length) {
 	if (length < 2) {
 		return;
 	}
 	uint64_t mid = length / 2;
-	merge_sort(arr, mid);
-	merge_sort(arr + mid, length - mid);
+	__merge_sort(arr, mid);
+	__merge_sort(arr + mid, length - mid);
 	__m_sort_merge(arr, length, mid);
 }
 
