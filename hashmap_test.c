@@ -5,6 +5,7 @@
 
 
 #define VERBOSE 0 // set to 1 for more output!
+#define KEY_LEN 25 // much larger than it needs to be
 
 int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
@@ -19,7 +20,7 @@ int main(int argc, char **argv) {
 	hashmap_set_string(&h, "test", value);
 	int i;
 	for(i = 0; i < num_els; i++) {
-		char key[5] = {0};
+		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
 		int *v = hashmap_set_int(&h, key, i * 3);
 		if (v == NULL) {
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
 	printf("Modify elements in the hash\n");
 	// now change it up some
 	for(i = 0; i < num_els; i++) { // hit each one to ensure we found them all
-		char key[5] = {0};
+		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
 		int *v = (int*)hashmap_get(&h, key);
 		if (v == NULL) {
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 	printf("Completed freeing keys\n\n");
 
 	for(i = 5; i <= 25; i+=5) { // lets remove 5 keys
-		char str[5] = {0};
+		char str[KEY_LEN] = {0};
 		sprintf(str, "%d", i);
 		hashmap_remove(&h, str);
 	}
@@ -68,7 +69,7 @@ int main(int argc, char **argv) {
 	printf("key: test\tvalue: %s\n", tmp);
 
 	for(i = 0; i < 30; i++) {
-		char str[5] = {0};
+		char str[KEY_LEN] = {0};
 		sprintf(str, "%d", i);
 		int *ti = (int *)hashmap_get(&h, str);
 		if (ti != NULL) {
@@ -80,7 +81,7 @@ int main(int argc, char **argv) {
 
 	printf("Testing somethings that are not in the hash: \n");
 	for(i = num_els; i < (num_els + 15); i++) {
-		char str[5] = {0};
+		char str[KEY_LEN] = {0};
 		sprintf(str, "%d", i);
 		int *ti = (int *)hashmap_get(&h, str);
 		if (ti != NULL) {
