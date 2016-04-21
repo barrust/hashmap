@@ -12,8 +12,6 @@
 #include "hashmap.h"
 
 
-
-
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.25       /* arbitrary */
 
