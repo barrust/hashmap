@@ -150,11 +150,11 @@ char* hashmap_set_string(HashMap *h, char *key, char *value) {
 *******************************************************************************/
 static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
 	int i, len = strlen(key);
-	unsigned char *p = calloc(len + 1, sizeof(char));
+	char *p = calloc(len + 1, sizeof(char));
 	strncpy(p, key, len);
 	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
 	for (i = 0; i < len; i++){
-		h = h ^ p[i];
+		h = h ^ (unsigned char) p[i];
 		h = h * 1099511628211ULL; // FNV_PRIME 64 bit
 	}
 	free(p);
