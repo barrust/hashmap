@@ -249,7 +249,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 }
 
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
-	h->nodes[i] = malloc(sizeof(hashmap_node));;
+	h->nodes[i] = malloc(sizeof(hashmap_node));
 	h->nodes[i]->key = calloc(strlen(key) + 1, sizeof(char));
 	strncpy(h->nodes[i]->key, key, strlen(key));
 	h->nodes[i]->value = value;

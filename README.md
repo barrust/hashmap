@@ -32,4 +32,4 @@ hashmap_destroy(&h);
 ```
 
 ##Required Compile Flags:
--lcrypto
+    None
