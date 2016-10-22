@@ -22,7 +22,7 @@
 
 #ifndef __HASH_MAP_H__
 #define __HASH_MAP_H__
-#include <stdlib.h>         /* malloc, etc */
+
 #include <inttypes.h>       /* PRIu64 */
 
 #ifdef __APPLE__
