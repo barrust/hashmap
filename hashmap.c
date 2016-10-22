@@ -8,7 +8,9 @@
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
-
+#include <stdlib.h>         /* malloc, etc */
+#include <stdio.h>          /* printf */
+#include <string.h>         /* strncpy, strncmp */
 #include "hashmap.h"
 
 
@@ -209,7 +211,7 @@ static int  __relayout_nodes(HashMap *h) {
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error) {
 	*error = 0; // no errors
 	uint64_t idx = *i = hash % h->number_nodes;
-	while (true) {
+	while (1) {
 		if (h->nodes[*i] == NULL) { //not found
 			return NULL;
 		} else if (h->nodes[*i]->hash == hash && strlen(key) == strlen(h->nodes[*i]->key) && strncmp(key, h->nodes[*i]->key, strlen(key)) == 0) {
@@ -288,8 +290,8 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
 	}
 	*worst_case = wc;
 	*max_big_o = max;
-	*avg_big_o = sum / (h->number_nodes * 1.0);
-	*avg_used_big_o = sum_used / (h->used_nodes * 1.0);
+	*avg_big_o = sum / ((float)h->number_nodes);
+	*avg_used_big_o = sum_used / ((float)h->used_nodes);
 
 	// sort the results
 	__merge_sort(hashes, h->used_nodes);
