@@ -1,6 +1,7 @@
 
 
-
+#include <stdlib.h>         /* malloc, etc */
+#include <stdio.h>          /* printf */
 #include "hashmap.h"
 
 

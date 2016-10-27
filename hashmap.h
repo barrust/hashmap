@@ -23,12 +23,7 @@
 #ifndef __HASH_MAP_H__
 #define __HASH_MAP_H__
 
-#include <stdlib.h>         /* malloc, etc */
 #include <inttypes.h>       /* PRIu64 */
-#include <stdio.h>          /* printf */
-#include <string.h>         /* strncpy, strncmp */
-#include <stdbool.h>        /* boolean: true false */
-
 
 #ifdef __APPLE__
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
