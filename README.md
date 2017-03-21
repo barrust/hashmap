@@ -5,11 +5,11 @@ Hashmaps are a key value store with quick look up times. The hashmap_stats() fun
 
 This hashmap implementation is a simple and, generally, quick method to include a hashmap in C programs. It was developed to provide a basis for testing and benchmarking performance along with providing a purposeful, low overhead library.
 
-##License
+## License
 MIT 2016
 
-##Usage:
-```
+## Usage:
+```c
 #include "hashmap.h"
 
 HashMap h;
@@ -31,5 +31,5 @@ hashmap_stats(&h);
 hashmap_destroy(&h);
 ```
 
-##Required Compile Flags:
+## Required Compile Flags:
 None
