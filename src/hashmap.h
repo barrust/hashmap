@@ -14,8 +14,7 @@
 ***
 ***	 Required Compile Flags:
 ***
-***	 TODO: Look into parallelization of the hashmap (openmp)
-***	       Hash Distribution research
+***	 TODO: Hash Distribution research
 ***	       Number required relayouts to ensure no 'lost' keys
 ***
 *******************************************************************************/

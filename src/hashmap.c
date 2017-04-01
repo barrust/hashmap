@@ -45,12 +45,7 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 ***		FUNCTION DEFINITIONS
 *******************************************************************************/
 int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
-	int res;
-	CRITICAL
-	{
-		res = __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
-	}
-	return res;
+	return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
 
 void hashmap_destroy(HashMap *h) {
@@ -74,21 +69,11 @@ void hashmap_destroy(HashMap *h) {
 }
 
 void* hashmap_set(HashMap *h, char *key, void *value) {
-	void* res;
-	CRITICAL
-	{
-		res = __hashmap_set(h, key, value, -1);
-	}
-	return res;
+	return __hashmap_set(h, key, value, -1);
 }
 
 void* hashmap_set_alt(HashMap *h, char *key, void * value) {
-	void* res;
-	CRITICAL
-	{
-		res = __hashmap_set(h, key, value, 0);
-	}
-	return res;
+	return __hashmap_set(h, key, value, 0);
 }
 
 void* hashmap_get(HashMap *h, char *key) {
@@ -175,23 +160,13 @@ char** hashmap_keys(HashMap *h) {
 int* hashmap_set_int(HashMap *h, char *key, int value) {
 	int *ptr = malloc(sizeof(int));
 	*ptr = value;
-	void* ret;
-	CRITICAL
-	{
-		ret = __hashmap_set(h, key, ptr, 0);
-	}
-	return (int*) ret;
+	return __hashmap_set(h, key, ptr, 0);
 }
 
 char* hashmap_set_string(HashMap *h, char *key, char *value) {
 	char *ptr = calloc(strlen(value) + 1, sizeof(char));
 	strncpy(ptr, value, strlen(value));
-	void* ret;
-	CRITICAL
-	{
-		 ret = __hashmap_set(h, key, ptr, 0);
-	}
-	return (char*) ret;
+	return __hashmap_set(h, key, ptr, 0);
 }
 
 /*******************************************************************************
@@ -281,22 +256,31 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		uint64_t num_nodes = h->number_nodes;
-		__allocate_hashmap(h, num_nodes * 2, h->hash_function);
+		CRITICAL
+		{
+			uint64_t num_nodes = h->number_nodes;
+			__allocate_hashmap(h, num_nodes * 2, h->hash_function);
+		}
 	}
 	// get the hash value
-	uint64_t hash = h->hash_function(key);
+	uint64_t hash = h->hash_function(key);  // TODO: move out of this function to better parallelize
 	uint64_t i;
+	void *tmp;
 	int error;
-	void *tmp = __get_node(h, key, hash, &i, &error);
+	CRITICAL
+	{
+		tmp = __get_node(h, key, hash, &i, &error);
+		if (tmp == NULL && error == -1) {
+			printf("Error: Unable to insert due to the hashmap being full\n");
+		} else  if (tmp != NULL) {
+			if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
+			h->nodes[i]->value = value;
+		} else {
+			__assign_node(h, key, value, mallocd, i, hash);
+		}
+	}
 	if (tmp == NULL && error == -1) {
-		printf("Error: Unable to insert due to the hashmap being full\n");
 		return NULL;
-	} else  if (tmp != NULL) {
-		if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
-		h->nodes[i]->value = value;
-	} else {
-		__assign_node(h, key, value, mallocd, i, hash);
 	}
 	return value;
 }
