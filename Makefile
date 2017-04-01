@@ -6,10 +6,14 @@ TESTDIR=tests
 
 all: clean hashmap unified
 	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS)
-omp:
-	$(CC) $(SRCDIR)/hashmap.c $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS) -fopenmp
+
+omp: CCFLAGS+= -fopenmp
+omp: hashmap
+	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS)
+
 hashmap:
 	$(CC) -c $(SRCDIR)/hashmap.c -o $(DISTDIR)/hashmap.o $(CCFLAGS)
+
 clean:
 	rm -rf ./$(DISTDIR)/*
 
