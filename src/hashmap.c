@@ -15,7 +15,7 @@
 
 #if defined (_OPENMP)
 #define ATOMIC _Pragma ("omp atomic")
-#define CRITICAL _Pragma ("omp critical")
+#define CRITICAL _Pragma ("omp critical (hashmap_lock)")
 #else
 #define ATOMIC
 #define CRITICAL

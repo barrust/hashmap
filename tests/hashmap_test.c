@@ -8,7 +8,14 @@
 #endif
 
 #include "timing.h"
-#include "hashmap.h"
+#include "../src/hashmap.h"
+
+
+#if defined (_OPENMP)
+#define PARRALLEL_FOR _Pragma ("omp parallel for private(i)")
+#else
+#define PARRALLEL_FOR
+#endif
 
 
 #define VERBOSE 0 // set to 1 for more output!
@@ -37,19 +44,21 @@ int main(int argc, char **argv) {
 	char *value = "this is a test of the system...";
 	hashmap_set_string(&h, "test", value);
 	int i;
+	PARRALLEL_FOR
 	for(i = 0; i < num_els; i++) {
+		// printf("Thread: %d\n", omp_get_thread_num());
 		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
 		int *v = hashmap_set_int(&h, key, i * 3);
 		if (v == NULL) {
 			printf("failed to insert the int: %d\n", i);
-			break;
 		}
 	}
 	printf("Completed adding strings into the hashmap\n\n");
 
 	printf("Modify elements in the hash\n");
 	// now change it up some
+	PARRALLEL_FOR
 	for(i = 0; i < num_els; i++) { // hit each one to ensure we found them all
 		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
@@ -77,6 +86,7 @@ int main(int argc, char **argv) {
 	free(keys);
 	printf("Completed freeing keys\n\n");
 
+	PARRALLEL_FOR
 	for(i = 5; i <= 25; i+=5) { // lets remove 5 keys
 		char str[KEY_LEN] = {0};
 		sprintf(str, "%d", i);

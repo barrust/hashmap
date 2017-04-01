@@ -1,12 +1,17 @@
-CCFLAGS=-Wall -Wpedantic
+CC=gcc
+CCFLAGS=-Wall -Wpedantic -g
+DISTDIR=dist
+SRCDIR=src
+TESTDIR=tests
 
-all: clean unified
-	gcc hashmap.c hashmap_test.c -o ./dist/hmt $(CCFLAGS)
+all: clean hashmap unified
+	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS)
 omp:
-	gcc hashmap.c hashmap_test.c -o ./dist/hmt $(CCFLAGS) -fopenmp
+	$(CC) $(SRCDIR)/hashmap.c $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS) -fopenmp
+hashmap:
+	$(CC) -c $(SRCDIR)/hashmap.c -o $(DISTDIR)/hashmap.o $(CCFLAGS)
 clean:
-	if [ -e ./dist/hmt ]; then rm ./dist/hmt; fi;
-	if [ -e ./dist/hashmap.h ]; then rm ./dist/hashmap.h; fi;
+	rm -rf ./$(DISTDIR)/*
 
 unified:
 	python unified_header.py
