@@ -20,8 +20,8 @@
 ***
 *******************************************************************************/
 
-#ifndef __HASH_MAP_H__
-#define __HASH_MAP_H__
+#ifndef BARRUST_HASH_MAP_H__
+#define BARRUST_HASH_MAP_H__
 
 #include <inttypes.h>       /* PRIu64 */
 

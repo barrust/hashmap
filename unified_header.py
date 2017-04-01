@@ -1,16 +1,6 @@
-"""
-    Author: Tyler Barrus
-    email:  barrust@gmail.com
-
-    Version: 0.1.2
-
-    Purpose: Simple script to help build passwords
-
-    License: MIT 2015
-
-    URL: https://github.com/barrust/password_generators
-"""
-
+'''
+    pull the c code into the header
+'''
 if __name__ == '__main__':
     doth = 'hashmap.h'
     dotc = 'hashmap.c'
