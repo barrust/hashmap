@@ -10,13 +10,6 @@
 ***
 ***	 URL: https://github.com/barrust/hashmap
 ***
-***	 Usage:
-***
-***	 Required Compile Flags:
-***
-***	 TODO: Hash Distribution research
-***	       Number required relayouts to ensure no 'lost' keys
-***
 *******************************************************************************/
 
 #ifndef BARRUST_HASH_MAP_H__

@@ -1,7 +1,7 @@
 
 ### Version 0.7.5
 
-* Add support for thread safe when using **OpenMP**
+* Add support for thread safety when using **OpenMP**
   * Only available when compiling hashmap.c with the *-fopenmp* flag
   * **Note:** Does not speed up insertion or lookup, just makes it so multiple
   threads can access the same hashmap at the same time
@@ -18,3 +18,7 @@
 * Remove need for sorting_algos.h
 * Converted hashing algorithm to FNV-1a
   * Remove need for the *-lcrypto* flag
+
+#### Earlier Versions
+
+* Setup hashmap with add, remove, and retrieve functionality

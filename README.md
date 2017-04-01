@@ -38,3 +38,6 @@ hashmap_destroy(&h);
 
 ## Required Compile Flags:
 None
+
+### Future Enhancements:
+To be determined
