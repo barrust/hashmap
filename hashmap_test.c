@@ -2,6 +2,12 @@
 
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
+
+#if defined (_OPENMP)
+#include <omp.h>
+#endif
+
+#include "timing.h"
 #include "hashmap.h"
 
 
@@ -12,6 +18,17 @@ int main(int argc, char **argv) {
 	printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
 	int num_els = 500000; //8000000;
+
+	#if defined (_OPENMP)
+	int THREADS = 1;
+	printf("OpenMP Enabled\n\n");
+	THREADS =  omp_get_max_threads();
+	printf("setting the number of threads to use to: %d\n", THREADS);
+	omp_set_num_threads(THREADS);
+	#endif
+
+	Timing t;
+	timing_start(&t);
 
 	HashMap h;
 	hashmap_init(&h);
@@ -97,4 +114,10 @@ int main(int argc, char **argv) {
 	printf("\nFree memory\n");
 	hashmap_destroy(&h);
 	printf("Completed freeing memory\n");
+	timing_end(&t);
+	#if defined (_OPENMP)
+	printf("Completed the multi-threaded Hashmap in %f seconds using %d threads!\n", timing_get_difference(t), THREADS);
+	#else
+	printf("Completed the Hashmap in %f seconds!\n", timing_get_difference(t));
+	#endif
 }
