@@ -1,9 +1,14 @@
 # hashmap
 Hashmap implementation written in C.
 
-Hashmaps are a key value store with quick look up times. The hashmap_stats() function will provide a summary of the current lookup times including average, worst case key not found, and worst case key found.
+Hashmaps are a key value store with quick look up times. The hashmap_stats()
+function will provide a summary of the current lookup times including average,
+worst case key not found, and worst case key found.
 
-This hashmap implementation is a simple and, generally, quick method to include a hashmap in C programs. It was developed to provide a basis for testing and benchmarking performance along with providing a purposeful, low overhead library.
+This hashmap implementation is a simple and, generally, quick method to include
+a hashmap in C programs. It was developed to provide a basis for testing and
+benchmarking performance along with providing a purposeful, low overhead
+library.
 
 ## License
 MIT 2016
@@ -33,3 +38,6 @@ hashmap_destroy(&h);
 
 ## Required Compile Flags:
 None
+
+### Future Enhancements:
+To be determined

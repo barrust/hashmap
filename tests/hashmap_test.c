@@ -2,7 +2,20 @@
 
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
-#include "hashmap.h"
+
+#if defined (_OPENMP)
+#include <omp.h>
+#endif
+
+#include "timing.h"
+#include "../src/hashmap.h"
+
+
+#if defined (_OPENMP)
+#define PARRALLEL_FOR _Pragma ("omp parallel for private(i)")
+#else
+#define PARRALLEL_FOR
+#endif
 
 
 #define VERBOSE 0 // set to 1 for more output!
@@ -13,6 +26,17 @@ int main(int argc, char **argv) {
 
 	int num_els = 500000; //8000000;
 
+	#if defined (_OPENMP)
+	int THREADS = 1;
+	printf("OpenMP Enabled\n\n");
+	THREADS =  omp_get_max_threads();
+	printf("setting the number of threads to use to: %d\n", THREADS);
+	omp_set_num_threads(THREADS);
+	#endif
+
+	Timing t;
+	timing_start(&t);
+
 	HashMap h;
 	hashmap_init(&h);
 
@@ -20,19 +44,21 @@ int main(int argc, char **argv) {
 	char *value = "this is a test of the system...";
 	hashmap_set_string(&h, "test", value);
 	int i;
+	PARRALLEL_FOR
 	for(i = 0; i < num_els; i++) {
+		// printf("Thread: %d\n", omp_get_thread_num());
 		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
 		int *v = hashmap_set_int(&h, key, i * 3);
 		if (v == NULL) {
 			printf("failed to insert the int: %d\n", i);
-			break;
 		}
 	}
 	printf("Completed adding strings into the hashmap\n\n");
 
 	printf("Modify elements in the hash\n");
 	// now change it up some
+	PARRALLEL_FOR
 	for(i = 0; i < num_els; i++) { // hit each one to ensure we found them all
 		char key[KEY_LEN] = {0};
 		sprintf(key, "%d", i);
@@ -60,6 +86,7 @@ int main(int argc, char **argv) {
 	free(keys);
 	printf("Completed freeing keys\n\n");
 
+	PARRALLEL_FOR
 	for(i = 5; i <= 25; i+=5) { // lets remove 5 keys
 		char str[KEY_LEN] = {0};
 		sprintf(str, "%d", i);
@@ -97,4 +124,10 @@ int main(int argc, char **argv) {
 	printf("\nFree memory\n");
 	hashmap_destroy(&h);
 	printf("Completed freeing memory\n");
+	timing_end(&t);
+	#if defined (_OPENMP)
+	printf("Completed the multi-threaded Hashmap in %f seconds using %d threads!\n", timing_get_difference(t), THREADS);
+	#else
+	printf("Completed the Hashmap in %f seconds!\n", timing_get_difference(t));
+	#endif
 }

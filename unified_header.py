@@ -2,8 +2,8 @@
     pull the c code into the header
 '''
 if __name__ == '__main__':
-    doth = 'hashmap.h'
-    dotc = 'hashmap.c'
+    doth = './src/hashmap.h'
+    dotc = './src/hashmap.c'
     unified = './dist/hashmap.h'
     # pull everything in
     with open(doth, 'r') as f:

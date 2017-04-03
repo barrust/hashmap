@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.4
+***	 Version: 0.7.5
 ***
 ***	 License: MIT 2015
 ***
@@ -12,6 +12,14 @@
 #include <stdio.h>          /* printf */
 #include <string.h>         /* strncpy, strncmp */
 #include "hashmap.h"
+
+#if defined (_OPENMP)
+#define ATOMIC _Pragma ("omp atomic")
+#define CRITICAL _Pragma ("omp critical (hashmap_lock)")
+#else
+#define ATOMIC
+#define CRITICAL
+#endif
 
 
 #define INITIAL_NUM_ELEMENTS 1024
@@ -41,20 +49,23 @@ int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 }
 
 void hashmap_destroy(HashMap *h) {
-	uint64_t i;
-	for (i = 0; i < h->number_nodes; i++) {
-		if (h->nodes[i] != NULL) {
-			free(h->nodes[i]->key);
-			if (h->nodes[i]->mallocd == 0) {
-				free(h->nodes[i]->value);
+	CRITICAL
+	{
+		uint64_t i;
+		for (i = 0; i < h->number_nodes; i++) {
+			if (h->nodes[i] != NULL) {
+				free(h->nodes[i]->key);
+				if (h->nodes[i]->mallocd == 0) {
+					free(h->nodes[i]->value);
+				}
+				free(h->nodes[i]);
 			}
-			free(h->nodes[i]);
 		}
+		free(h->nodes);
+		h->number_nodes = 0;
+		h->used_nodes = 0;
+		h->hash_function = NULL;
 	}
-	free(h->nodes);
-	h->number_nodes = 0;
-	h->used_nodes = 0;
-	h->hash_function = NULL;
 }
 
 void* hashmap_set(HashMap *h, char *key, void *value) {
@@ -66,28 +77,37 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 }
 
 void* hashmap_get(HashMap *h, char *key) {
+	void* res;
 	uint64_t i, hash = h->hash_function(key);
 	i = hash % h->number_nodes;
 	int e;
-	return __get_node(h, key, hash, &i, &e);
+	CRITICAL
+	{
+		res = __get_node(h, key, hash, &i, &e);
+	}
+	return res;
 }
 
 void* hashmap_remove(HashMap *h, char *key) {
 	uint64_t i, hash = h->hash_function(key);
 	i = hash % h->number_nodes;
 	int e;
-	void* ret = __get_node(h, key, hash, &i, &e);
-	if (ret != NULL) {
-		free(h->nodes[i]->key);
-		if (h->nodes[i]->mallocd == 0) {
-			free(h->nodes[i]->value);
-			ret = NULL;
+	void* ret;
+	CRITICAL
+	{
+		ret = __get_node(h, key, hash, &i, &e);
+		if (ret != NULL) {
+			free(h->nodes[i]->key);
+			if (h->nodes[i]->mallocd == 0) {
+				free(h->nodes[i]->value);
+				ret = NULL;
+			}
+			free(h->nodes[i]);
+			h->nodes[i] = NULL;
+			h->used_nodes--;
+			// TODO: Refactor relayout nodes to allow for re-layout from a particular position (i)
+			__relayout_nodes(h);
 		}
-		free(h->nodes[i]);
-		h->nodes[i] = NULL;
-		h->used_nodes--;
-		// TODO: Refactor relayout nodes to allow for re-layout from a particular position (i)
-		__relayout_nodes(h);
 	}
 	return ret;
 }
@@ -117,13 +137,17 @@ void hashmap_stats(HashMap *h) {
 }
 
 char** hashmap_keys(HashMap *h) {
-	char** keys = calloc(h->used_nodes, sizeof(char*));
-	uint64_t i, j = 0;
-	for (i = 0; i < h->number_nodes; i++) {
-		if (h->nodes[i] != NULL) {
-			keys[j] = calloc(strlen(h->nodes[i]->key) + 1, sizeof(char));
-			strncpy(keys[j], h->nodes[i]->key, strlen(h->nodes[i]->key));
-			j++;
+	char** keys;
+	CRITICAL
+	{
+		keys = calloc(h->used_nodes, sizeof(char*));
+		uint64_t i, j = 0;
+		for (i = 0; i < h->number_nodes; i++) {
+			if (h->nodes[i] != NULL) {
+				keys[j] = calloc(strlen(h->nodes[i]->key) + 1, sizeof(char));
+				strncpy(keys[j], h->nodes[i]->key, strlen(h->nodes[i]->key));
+				j++;
+			}
 		}
 	}
 	return keys;
@@ -136,13 +160,13 @@ char** hashmap_keys(HashMap *h) {
 int* hashmap_set_int(HashMap *h, char *key, int value) {
 	int *ptr = malloc(sizeof(int));
 	*ptr = value;
-	return (int*) __hashmap_set(h, key, ptr, 0);
+	return __hashmap_set(h, key, ptr, 0);
 }
 
 char* hashmap_set_string(HashMap *h, char *key, char *value) {
 	char *ptr = calloc(strlen(value) + 1, sizeof(char));
 	strncpy(ptr, value, strlen(value));
-	return (char*) __hashmap_set(h, key, ptr, 0);
+	return __hashmap_set(h, key, ptr, 0);
 }
 
 /*******************************************************************************
@@ -181,7 +205,7 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 			h->nodes[i] = NULL;
 		}
 		h->number_nodes = num_els;
-		int q = 0, j = 0;
+		int q = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
 			q = __relayout_nodes(h);
@@ -197,7 +221,9 @@ static int  __relayout_nodes(HashMap *h) {
 		if(h->nodes[i] != NULL) {
 			uint64_t id;
 			int error;
-			void *tn = __get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &id, &error);
+			// ignore the return since we do not need it
+			__get_node(h, h->nodes[i]->key, h->nodes[i]->hash, &id, &error);
+
 			if (id != i) {
 				moved_one = 0;
 				h->nodes[id] = h->nodes[i];
@@ -230,22 +256,31 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
 	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		uint64_t num_nodes = h->number_nodes;
-		__allocate_hashmap(h, num_nodes * 2, h->hash_function);
+		CRITICAL
+		{
+			uint64_t num_nodes = h->number_nodes;
+			__allocate_hashmap(h, num_nodes * 2, h->hash_function);
+		}
 	}
 	// get the hash value
-	uint64_t hash = h->hash_function(key);
+	uint64_t hash = h->hash_function(key);  // TODO: move out of this function to better parallelize
 	uint64_t i;
+	void *tmp;
 	int error;
-	void *tmp = __get_node(h, key, hash, &i, &error);
+	CRITICAL
+	{
+		tmp = __get_node(h, key, hash, &i, &error);
+		if (tmp == NULL && error == -1) {
+			printf("Error: Unable to insert due to the hashmap being full\n");
+		} else  if (tmp != NULL) {
+			if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
+			h->nodes[i]->value = value;
+		} else {
+			__assign_node(h, key, value, mallocd, i, hash);
+		}
+	}
 	if (tmp == NULL && error == -1) {
-		printf("Error: Unable to insert due to the hashmap being full\n");
 		return NULL;
-	} else  if (tmp != NULL) {
-		if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
-		h->nodes[i]->value = value;
-	} else {
-		__assign_node(h, key, value, mallocd, i, hash);
 	}
 	return value;
 }
