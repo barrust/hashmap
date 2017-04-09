@@ -14,10 +14,8 @@
 #include "hashmap.h"
 
 #if defined (_OPENMP)
-#define ATOMIC _Pragma ("omp atomic")
 #define CRITICAL _Pragma ("omp critical (hashmap_lock)")
 #else
-#define ATOMIC
 #define CRITICAL
 #endif
 
@@ -44,6 +42,10 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
 *******************************************************************************/
+int hashmap_init(HashMap *h) {
+	return hashmap_init_alt(h, NULL);
+}
+
 int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
 	return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
@@ -78,23 +80,23 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 
 void* hashmap_get(HashMap *h, char *key) {
 	void* res;
-	uint64_t i, hash = h->hash_function(key);
-	i = hash % h->number_nodes;
-	int e;
 	CRITICAL
 	{
+		uint64_t i, hash = h->hash_function(key);
+		int e;
+		i = hash % h->number_nodes;
 		res = __get_node(h, key, hash, &i, &e);
 	}
 	return res;
 }
 
 void* hashmap_remove(HashMap *h, char *key) {
-	uint64_t i, hash = h->hash_function(key);
-	i = hash % h->number_nodes;
-	int e;
 	void* ret;
 	CRITICAL
 	{
+		uint64_t i, hash = h->hash_function(key);
+		i = hash % h->number_nodes;
+		int e;
 		ret = __get_node(h, key, hash, &i, &e);
 		if (ret != NULL) {
 			free(h->nodes[i]->key);
@@ -255,9 +257,9 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
-	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		CRITICAL
-		{
+	CRITICAL
+	{
+		if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
 			uint64_t num_nodes = h->number_nodes;
 			__allocate_hashmap(h, num_nodes * 2, h->hash_function);
 		}

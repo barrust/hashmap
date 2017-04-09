@@ -53,69 +53,49 @@ typedef struct hashmap {
 } HashMap;
 
 /* initialize the hashmap using the default hashing function */
-#define hashmap_init(h) {hashmap_init_alt(h, NULL);}
+int hashmap_init(HashMap *h);
 
 /* initialize the hashmap using the provided hashing function */
 int hashmap_init_alt(HashMap *h, HashFunction hash_function);
 
-/*
-	frees all memory allocated by the hashmap library
-	NOTE: If the value is malloc'd memory, it is up to the user to free it
-*/
+/*	frees all memory allocated by the hashmap library
+	NOTE: If the value is malloc'd memory, it is up to the user to free it */
 void hashmap_destroy(HashMap *h);
 
-/*
-	Adds the key to the hashmap or updates the hashmap if it is already present
+/*	Adds the key to the hashmap or updates the hashmap if it is already present
 	If it updates instead of adds, returns the pointer to the replaced value,
 	(unless it is mallocd by the hashmap on insert) otherwise it returns the
-	pointer to the new value. Returns NULL if there is an error.
-*/
+	pointer to the new value. Returns NULL if there is an error. */
 void* hashmap_set(HashMap *h, char *key, void *value);
 
-/*
-	Adds the key to the hashmap or updates the key if already present. Also
+/*	Adds the key to the hashmap or updates the key if already present. Also
 	signals to the system to do a simple 'free' command on the value on
-	destruction.
-*/
+	destruction. */
 void* hashmap_set_alt(HashMap *h, char *key, void * value);
 
-/*
-	Returns the pointer to the value of the found key, or NULL if not found
-*/
+/* Returns the pointer to the value of the found key, or NULL if not found */
 void* hashmap_get(HashMap *h, char *key);
 
-/*
- 	Removes a key from the hashmap. NULL will be returned if it is not present.
+/*	Removes a key from the hashmap. NULL will be returned if it is not present.
 	If it is designated to be cleaned up, the memory will be free'd and NULL
 	returned. Otherwise, the pointer to the value will be returned.
 
-	TODO: Add a int flag to signal if NULL is b/c it was freed or not present
-*/
+	TODO: Add a int flag to signal if NULL is b/c it was freed or not present */
 void* hashmap_remove(HashMap *h, char *key);
 
-/*
-	Returns an array of all keys in the hashmap.
-	NOTE: It is up to the caller to free the array returned.
-
-	TODO: Sort keys?
-*/
+/*	Returns an array of all keys in the hashmap.
+	NOTE: It is up to the caller to free the array returned. */
 char** hashmap_keys(HashMap *h);
 
-/*
-	Prints out some basic stats about the hashmap
-*/
+/* Prints out some basic stats about the hashmap */
 void hashmap_stats(HashMap *h);
 
-/*
-	Easily add an int, this will malloc everything for the user and will signal
-	to de-allocate the memory on destruction
-*/
+/*	Easily add an int, this will malloc everything for the user and will signal
+	to de-allocate the memory on destruction */
 int* hashmap_set_int(HashMap *h, char *key, int value);
 
-/*
-	Easily add a string, this will malloc everything for the user and will signal
-	to de-allocate the memory on destruction
-*/
+/*	Easily add a string, this will malloc everything for the user and will signal
+	to de-allocate the memory on destruction */
 char* hashmap_set_string(HashMap *h, char *key, char *value);
 
 

@@ -1,3 +1,8 @@
+### Version 0.7.6
+
+* Fix for possible race condition when **OpenMP** used
+* Remove `#define` construct to allow functions to better be used directly in
+if-statements
 
 ### Version 0.7.5
 

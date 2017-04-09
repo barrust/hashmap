@@ -40,4 +40,6 @@ hashmap_destroy(&h);
 None
 
 ### Future Enhancements:
-To be determined
+* Allow for sorting from the `hashmap_keys` function
+* Improve relaying out nodes to not have to loop over the whole hashmap
+* Prove if relaying out nodes needs to do more than 1 loop
