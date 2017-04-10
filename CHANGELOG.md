@@ -3,6 +3,7 @@
 * Fix for possible race condition when **OpenMP** used
 * Remove `#define` construct to allow functions to better be used directly in
 if-statements
+* Start re-laying out nodes from removal location
 
 ### Version 0.7.5
 

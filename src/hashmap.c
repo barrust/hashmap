@@ -31,7 +31,7 @@ static uint64_t default_hash(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
-static int   __relayout_nodes(HashMap *h);
+static int   __relayout_nodes(HashMap *h, uint64_t loc);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
@@ -107,8 +107,7 @@ void* hashmap_remove(HashMap *h, char *key) {
 			free(h->nodes[i]);
 			h->nodes[i] = NULL;
 			h->used_nodes--;
-			// TODO: Refactor relayout nodes to allow for re-layout from a particular position (i)
-			__relayout_nodes(h);
+			__relayout_nodes(h, i);
 		}
 	}
 	return ret;
@@ -210,16 +209,19 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 		int q = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
-			q = __relayout_nodes(h);
+			q = __relayout_nodes(h, 0);
 		}
 	}
 	return HASHMAP_SUCCESS;
 }
 
-static int  __relayout_nodes(HashMap *h) {
+static int __relayout_nodes(HashMap *h, uint64_t loc) {
+	if (loc > h->number_nodes) {
+		loc = 0;
+	}
 	int moved_one = 1;
 	uint64_t i;
-	for (i = 0; i < h->number_nodes; i++) {
+	for (i = loc; i < h->number_nodes; i++) {
 		if(h->nodes[i] != NULL) {
 			uint64_t id;
 			int error;

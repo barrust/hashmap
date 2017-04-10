@@ -41,5 +41,9 @@ None
 
 ### Future Enhancements:
 * Allow for sorting from the `hashmap_keys` function
-* Improve relaying out nodes to not have to loop over the whole hashmap
 * Prove if relaying out nodes needs to do more than 1 loop
+* Add ability to merge Hashmaps
+* Add additional utility functions
+  * float
+  * double
+* More in-depth test suite
