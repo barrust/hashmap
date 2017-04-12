@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.5
+***	 Version: 0.7.6
 ***
 ***	 License: MIT 2015
 ***
@@ -14,10 +14,8 @@
 #include "hashmap.h"
 
 #if defined (_OPENMP)
-#define ATOMIC _Pragma ("omp atomic")
 #define CRITICAL _Pragma ("omp critical (hashmap_lock)")
 #else
-#define ATOMIC
 #define CRITICAL
 #endif
 
@@ -32,8 +30,8 @@
 static uint64_t default_hash(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function);
-static int   __relayout_nodes(HashMap *h);
+static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashmapHashFunction hash_function);
+static int   __relayout_nodes(HashMap *h, uint64_t loc);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
@@ -44,7 +42,11 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 /*******************************************************************************
 ***		FUNCTION DEFINITIONS
 *******************************************************************************/
-int hashmap_init_alt(HashMap *h, HashFunction hash_function) {
+int hashmap_init(HashMap *h) {
+	return hashmap_init_alt(h, NULL);
+}
+
+int hashmap_init_alt(HashMap *h, HashmapHashFunction hash_function) {
 	return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
 
@@ -78,23 +80,23 @@ void* hashmap_set_alt(HashMap *h, char *key, void * value) {
 
 void* hashmap_get(HashMap *h, char *key) {
 	void* res;
-	uint64_t i, hash = h->hash_function(key);
-	i = hash % h->number_nodes;
-	int e;
 	CRITICAL
 	{
+		uint64_t i, hash = h->hash_function(key);
+		int e;
+		i = hash % h->number_nodes;
 		res = __get_node(h, key, hash, &i, &e);
 	}
 	return res;
 }
 
 void* hashmap_remove(HashMap *h, char *key) {
-	uint64_t i, hash = h->hash_function(key);
-	i = hash % h->number_nodes;
-	int e;
 	void* ret;
 	CRITICAL
 	{
+		uint64_t i, hash = h->hash_function(key);
+		i = hash % h->number_nodes;
+		int e;
 		ret = __get_node(h, key, hash, &i, &e);
 		if (ret != NULL) {
 			free(h->nodes[i]->key);
@@ -105,8 +107,7 @@ void* hashmap_remove(HashMap *h, char *key) {
 			free(h->nodes[i]);
 			h->nodes[i] = NULL;
 			h->used_nodes--;
-			// TODO: Refactor relayout nodes to allow for re-layout from a particular position (i)
-			__relayout_nodes(h);
+			__relayout_nodes(h, i);
 		}
 	}
 	return ret;
@@ -185,7 +186,7 @@ static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/c
 	return h;
 }
 
-static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_function) {
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashmapHashFunction hash_function) {
 	uint64_t i;
 	if (num_els == INITIAL_NUM_ELEMENTS) {
 		h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
@@ -208,16 +209,16 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashFunction hash_f
 		int q = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
-			q = __relayout_nodes(h);
+			q = __relayout_nodes(h, 0);
 		}
 	}
 	return HASHMAP_SUCCESS;
 }
 
-static int  __relayout_nodes(HashMap *h) {
+static int __relayout_nodes(HashMap *h, uint64_t loc) {
 	int moved_one = 1;
 	uint64_t i;
-	for (i = 0; i < h->number_nodes; i++) {
+	for (i = loc; i < h->number_nodes; i++) {
 		if(h->nodes[i] != NULL) {
 			uint64_t id;
 			int error;
@@ -255,9 +256,9 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
 
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 	// check to see if we need to expand the hashmap
-	if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
-		CRITICAL
-		{
+	CRITICAL
+	{
+		if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
 			uint64_t num_nodes = h->number_nodes;
 			__allocate_hashmap(h, num_nodes * 2, h->hash_function);
 		}
