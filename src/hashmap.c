@@ -51,6 +51,17 @@ int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function) {
 }
 
 void hashmap_destroy(HashMap *h) {
+	hashmap_clear(h);
+	CRITICAL
+	{
+		free(h->nodes);
+		h->number_nodes = 0;
+		h->used_nodes = 0;
+		h->hash_function = NULL;
+	}
+}
+
+void hashmap_clear(HashMap *h) {
 	CRITICAL
 	{
 		uint64_t i;
@@ -61,12 +72,9 @@ void hashmap_destroy(HashMap *h) {
 					free(h->nodes[i]->value);
 				}
 				free(h->nodes[i]);
+				h->nodes[i] = NULL;
 			}
 		}
-		free(h->nodes);
-		h->number_nodes = 0;
-		h->used_nodes = 0;
-		h->hash_function = NULL;
 	}
 }
 

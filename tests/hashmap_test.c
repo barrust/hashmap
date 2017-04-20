@@ -27,9 +27,8 @@ int main(int argc, char **argv) {
 	int num_els = 500000; //8000000;
 
 	#if defined (_OPENMP)
-	int THREADS = 1;
 	printf("OpenMP Enabled\n\n");
-	THREADS =  omp_get_max_threads();
+	int THREADS =  omp_get_max_threads();
 	printf("setting the number of threads to use to: %d\n", THREADS);
 	omp_set_num_threads(THREADS);
 	#endif

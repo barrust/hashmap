@@ -21,10 +21,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.7.6"
+#define HASHMAP_VERSION "0.7.7"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 7
-#define HASHMAP_REVISION 6
+#define HASHMAP_REVISION 7
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -61,6 +61,9 @@ int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function);
 /*	frees all memory allocated by the hashmap library
 	NOTE: If the value is malloc'd memory, it is up to the user to free it */
 void hashmap_destroy(HashMap *h);
+
+/* clear the hashmap for reuse */
+void hashmap_clear(HashMap *h);
 
 /*	Adds the key to the hashmap or updates the hashmap if it is already present
 	If it updates instead of adds, returns the pointer to the replaced value,
