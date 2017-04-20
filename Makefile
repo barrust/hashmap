@@ -1,5 +1,5 @@
 CC=gcc
-CCFLAGS=-Wall -Wpedantic -g
+CCFLAGS=-Wall -Wpedantic -O3
 DISTDIR=dist
 SRCDIR=src
 TESTDIR=tests

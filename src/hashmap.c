@@ -3,18 +3,18 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.6
+***	 Version: 0.7.7
 ***
 ***	 License: MIT 2015
 ***
 *******************************************************************************/
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
-#include <string.h>         /* strncpy, strncmp */
+#include <string.h>         /* strncmp */
 #include "hashmap.h"
 
 #if defined (_OPENMP)
-#define CRITICAL _Pragma ("omp critical (hashmap_lock)")
+#define CRITICAL _Pragma ("omp critical (barrust_hashmap_lock)")
 #else
 #define CRITICAL
 #endif
@@ -145,8 +145,9 @@ char** hashmap_keys(HashMap *h) {
 		uint64_t i, j = 0;
 		for (i = 0; i < h->number_nodes; i++) {
 			if (h->nodes[i] != NULL) {
-				keys[j] = calloc(strlen(h->nodes[i]->key) + 1, sizeof(char));
-				strncpy(keys[j], h->nodes[i]->key, strlen(h->nodes[i]->key));
+				int len = strlen(h->nodes[i]->key);
+				keys[j] = calloc(len + 1, sizeof(char));
+				memcpy(keys[j], h->nodes[i]->key, len);
 				j++;
 			}
 		}
@@ -165,8 +166,9 @@ int* hashmap_set_int(HashMap *h, char *key, int value) {
 }
 
 char* hashmap_set_string(HashMap *h, char *key, char *value) {
-	char *ptr = calloc(strlen(value) + 1, sizeof(char));
-	strncpy(ptr, value, strlen(value));
+	int len = strlen(value);
+	char *ptr = calloc(len + 1, sizeof(char));
+	memcpy(ptr, value, len);
 	return __hashmap_set(h, key, ptr, 0);
 }
 
@@ -176,7 +178,7 @@ char* hashmap_set_string(HashMap *h, char *key, char *value) {
 static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
 	int i, len = strlen(key);
 	char *p = calloc(len + 1, sizeof(char));
-	strncpy(p, key, len);
+	memcpy(p, key, len);
 	uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
 	for (i = 0; i < len; i++){
 		h = h ^ (unsigned char) p[i];
@@ -238,10 +240,11 @@ static int __relayout_nodes(HashMap *h, uint64_t loc) {
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error) {
 	*error = 0; // no errors
 	uint64_t idx = *i = hash % h->number_nodes;
+	int len = strlen(key);
 	while (1) {
 		if (h->nodes[*i] == NULL) { //not found
 			return NULL;
-		} else if (h->nodes[*i]->hash == hash && strlen(key) == strlen(h->nodes[*i]->key) && strncmp(key, h->nodes[*i]->key, strlen(key)) == 0) {
+		} else if (h->nodes[*i]->hash == hash && len == strlen(h->nodes[*i]->key) && strncmp(key, h->nodes[*i]->key, len) == 0) {
 			return  h->nodes[*i]->value;
 		} else {
 			// lets see if we need to continue or if we have already gone all the way around
@@ -287,9 +290,10 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
 }
 
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
+	int len = strlen(key);
 	h->nodes[i] = malloc(sizeof(hashmap_node));
-	h->nodes[i]->key = calloc(strlen(key) + 1, sizeof(char));
-	strncpy(h->nodes[i]->key, key, strlen(key));
+	h->nodes[i]->key = calloc(len + 1, sizeof(char));
+	memcpy(h->nodes[i]->key, key, len);
 	h->nodes[i]->value = value;
 	h->nodes[i]->hash = hash;
 	h->nodes[i]->mallocd = mallocd;

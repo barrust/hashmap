@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.6
+***	 Version: 0.7.7
 ***	 Purpose: Simple, yet effective, hashmap implementation
 ***
 ***	 License: MIT 2015
