@@ -30,7 +30,7 @@
 static uint64_t default_hash(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static int   __allocate_hashmap(HashMap *h, uint64_t num_els, HashmapHashFunction hash_function);
+static int   __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function);
 static int   __relayout_nodes(HashMap *h, uint64_t loc);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
@@ -46,7 +46,7 @@ int hashmap_init(HashMap *h) {
 	return hashmap_init_alt(h, NULL);
 }
 
-int hashmap_init_alt(HashMap *h, HashmapHashFunction hash_function) {
+int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function) {
 	return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
 }
 
@@ -188,7 +188,7 @@ static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/c
 	return h;
 }
 
-static int  __allocate_hashmap(HashMap *h, uint64_t num_els, HashmapHashFunction hash_function) {
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function) {
 	uint64_t i;
 	if (num_els == INITIAL_NUM_ELEMENTS) {
 		h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));

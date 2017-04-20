@@ -33,7 +33,7 @@
 #define hashmap_number_keys(h)   (h.used_nodes)
 
 
-typedef uint64_t (*HashmapHashFunction) (char *key);
+typedef uint64_t (*hashmap_hash_function) (char *key);
 
 /*******************************************************************************
 ***    Data structures
@@ -49,14 +49,14 @@ typedef struct hashmap {
 	hashmap_node **nodes;
 	uint64_t number_nodes;
 	uint64_t used_nodes;
-	HashmapHashFunction hash_function;
+	hashmap_hash_function hash_function;
 } HashMap;
 
 /* initialize the hashmap using the default hashing function */
 int hashmap_init(HashMap *h);
 
 /* initialize the hashmap using the provided hashing function */
-int hashmap_init_alt(HashMap *h, HashmapHashFunction hash_function);
+int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function);
 
 /*	frees all memory allocated by the hashmap library
 	NOTE: If the value is malloc'd memory, it is up to the user to free it */
