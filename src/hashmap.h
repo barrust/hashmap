@@ -105,5 +105,8 @@ int* hashmap_set_int(HashMap *h, char *key, int value);
 	to de-allocate the memory on destruction */
 char* hashmap_set_string(HashMap *h, char *key, char *value);
 
+/* Return the fullness of the hashmap */
+float hashmap_get_fullness(HashMap *h);
+
 
 #endif /* END HASHMAP HEADER */

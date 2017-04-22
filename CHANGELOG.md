@@ -1,5 +1,9 @@
 ## Current Version
 
+### Master
+
+* Fix segfault when calculating stats on empty hashmap
+
 ### Version 0.7.7
 
 * Add clear hashmap functionality

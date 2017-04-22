@@ -55,7 +55,6 @@ void hashmap_destroy(HashMap *h) {
 	CRITICAL
 	{
 		free(h->nodes);
-		h->number_nodes = 0;
 		h->used_nodes = 0;
 		h->hash_function = NULL;
 	}
@@ -75,6 +74,7 @@ void hashmap_clear(HashMap *h) {
 				h->nodes[i] = NULL;
 			}
 		}
+		h->used_nodes = 0;
 	}
 }
 
@@ -119,6 +119,10 @@ void* hashmap_remove(HashMap *h, char *key) {
 		}
 	}
 	return ret;
+}
+
+float hashmap_get_fullness(HashMap *h) {
+	return __get_fullness(h) * 100.0;
 }
 
 void hashmap_stats(HashMap *h) {
@@ -315,47 +319,55 @@ static inline float __get_fullness(HashMap *h) {
 static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
 	uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
 	unsigned int hash_col = 0, idx_col = 0;
-	uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
-	uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
-	for (i = 0; i < h->number_nodes; i++) {
-		if (h->nodes[i] != NULL) {
-			cur++;
-			uint64_t idx = h->nodes[i]->hash % h->number_nodes;
-			uint64_t O = __calc_big_o(h->number_nodes, i, idx);
-			sum_used += O;
-			sum += O;
-			if (O > max) {
-				max = O;
+	if (h->used_nodes != 0) {
+		uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
+		uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
+		for (i = 0; i < h->number_nodes; i++) {
+			if (h->nodes[i] != NULL) {
+				cur++;
+				uint64_t idx = h->nodes[i]->hash % h->number_nodes;
+				uint64_t O = __calc_big_o(h->number_nodes, i, idx);
+				sum_used += O;
+				sum += O;
+				if (O > max) {
+					max = O;
+				}
+				hashes[j] = h->nodes[i]->hash;
+				idxs[j] = idx;
+				j++;
+			} else {
+				sum += 1;
+				if (wc < cur) { wc = cur; }
+				cur = 0;
 			}
-			hashes[j] = h->nodes[i]->hash;
-			idxs[j] = idx;
-			j++;
-		} else {
-			sum += 1;
-			if (wc < cur) { wc = cur; }
-			cur = 0;
 		}
+
+		// sort the results
+		__merge_sort(hashes, h->used_nodes);
+		__merge_sort(idxs, h->used_nodes);
+
+		// then do some maths to see if there are actual collisions
+		for (i = 0; i < h->used_nodes - 1; i++) {
+			if(hashes[i] == hashes[i + 1]) {
+				hash_col++;
+			}
+			if(idxs[i] == idxs[i + 1]) {
+				idx_col++;
+			}
+		}
+		free(hashes);
+		free(idxs);
 	}
+
 	*worst_case = wc;
 	*max_big_o = max;
 	*avg_big_o = sum / ((float)h->number_nodes);
-	*avg_used_big_o = sum_used / ((float)h->used_nodes);
-
-	// sort the results
-	__merge_sort(hashes, h->used_nodes);
-	__merge_sort(idxs, h->used_nodes);
-
-	// then do some maths to see if there are actual collisions
-	for (i = 0; i < h->used_nodes - 1; i++) {
-		if(hashes[i] == hashes[i + 1]) {
-			hash_col++;
-		}
-		if(idxs[i] == idxs[i + 1]) {
-			idx_col++;
-		}
+	if (h->used_nodes != 0) {
+		*avg_used_big_o = sum_used / ((float)h->used_nodes);
+	} else {
+		*avg_used_big_o = 0;
 	}
-	free(hashes);
-	free(idxs);
+
 	*hash = hash_col;
 	*idx = idx_col;
 }

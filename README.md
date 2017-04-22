@@ -24,7 +24,7 @@ hashmap_set_string(&h, "google", "search engine, android, web ads");
 hashmap_set_string(&h, "facebook", "social media site");
 hashmap_set_string(&h, "twitter", "the sound of little birds");
 
-char *tmp = (char *)hashmap_get(&h, "google");
+char* tmp = (char*)hashmap_get(&h, "google");
 if (tmp == NULL) {
 	printf("'google' was not in the hashmap\n");
 } else {
