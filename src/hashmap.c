@@ -3,7 +3,7 @@
 ***	 Author: Tyler Barrus
 ***	 email:  barrust@gmail.com
 ***
-***	 Version: 0.7.7
+***	 Version: 0.7.8
 ***
 ***	 License: MIT 2015
 ***
@@ -31,7 +31,7 @@ static uint64_t default_hash(char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function);
-static int   __relayout_nodes(HashMap *h, uint64_t loc);
+static int   __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null);
 static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
@@ -115,7 +115,7 @@ void* hashmap_remove(HashMap *h, char *key) {
 			free(h->nodes[i]);
 			h->nodes[i] = NULL;
 			h->used_nodes--;
-			__relayout_nodes(h, i);
+			__relayout_nodes(h, i, 0);
 		}
 	}
 	return ret;
@@ -241,13 +241,13 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_functi
 		int q = 0;
 		// TODO: The math to see if this ever needs to be done more than once
 		while (q == 0) {
-			q = __relayout_nodes(h, 0);
+			q = __relayout_nodes(h, 0, 1);
 		}
 	}
 	return HASHMAP_SUCCESS;
 }
 
-static int __relayout_nodes(HashMap *h, uint64_t loc) {
+static int __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null) {
 	int moved_one = 1;
 	uint64_t i;
 	for (i = loc; i < h->number_nodes; i++) {
@@ -262,7 +262,9 @@ static int __relayout_nodes(HashMap *h, uint64_t loc) {
 				h->nodes[id] = h->nodes[i];
 				h->nodes[i] = NULL;
 			}
-		}
+		} else if (end_on_null == 0 && i != loc) {
+            break;
+        }
 	}
 	return moved_one;
 }
