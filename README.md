@@ -46,4 +46,3 @@ None
 * Add additional utility functions
   * float
   * double
-* More in-depth test suite
