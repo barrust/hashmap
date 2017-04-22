@@ -97,9 +97,17 @@ void hashmap_stats(HashMap *h);
 	to de-allocate the memory on destruction */
 int* hashmap_set_int(HashMap *h, char *key, int value);
 
+/*	Easily add a long, this will malloc everything for the user and will signal
+	to de-allocate the memory on destruction */
+long* hashmap_set_long(HashMap *h, char *key, long value);
+
 /*	Easily add a float, this will malloc everything for the user and will signal
 	to de-allocate the memory on destruction */
-// char* hashmap_set_float(HashMap *h, char *key, float value);
+float* hashmap_set_float(HashMap *h, char *key, float value);
+
+/*	Easily add a double, this will malloc everything for the user and will
+	signal to de-allocate the memory on destruction */
+double* hashmap_set_double(HashMap *h, char *key, float value);
 
 /*	Easily add a string, this will malloc everything for the user and will signal
 	to de-allocate the memory on destruction */

@@ -177,10 +177,28 @@ int* hashmap_set_int(HashMap *h, char *key, int value) {
 	return __hashmap_set(h, key, ptr, 0);
 }
 
+long* hashmap_set_long(HashMap *h, char *key, long value) {
+	long *ptr = malloc(sizeof(long));
+	*ptr = value;
+	return __hashmap_set(h, key, ptr, 0);
+}
+
 char* hashmap_set_string(HashMap *h, char *key, char *value) {
 	int len = strlen(value);
 	char *ptr = calloc(len + 1, sizeof(char));
 	memcpy(ptr, value, len);
+	return __hashmap_set(h, key, ptr, 0);
+}
+
+float* hashmap_set_float(HashMap *h, char *key, float value) {
+	float *ptr = malloc(sizeof(float));
+	*ptr = value;
+	return __hashmap_set(h, key, ptr, 0);
+}
+
+double* hashmap_set_double(HashMap *h, char *key, float value) {
+	double *ptr = malloc(sizeof(double));
+	*ptr = value;
 	return __hashmap_set(h, key, ptr, 0);
 }
 

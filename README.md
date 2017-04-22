@@ -44,5 +44,4 @@ None
 * Prove if relaying out nodes needs to do more than 1 loop
 * Add ability to merge Hashmaps
 * Add additional utility functions
-  * float
-  * double
+  * ???

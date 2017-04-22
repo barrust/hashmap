@@ -3,6 +3,7 @@
 ### Master
 
 * Fix segfault when calculating stats on empty hashmap
+* Added utility insert functions: float, double, and long
 
 ### Version 0.7.7
 

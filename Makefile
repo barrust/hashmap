@@ -6,6 +6,7 @@ TESTDIR=tests
 
 all: clean hashmap unified
 	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS)
+	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/update_test.c -o ./dist/ut $(CCFLAGS)
 
 omp: CCFLAGS+= -fopenmp
 omp: hashmap
