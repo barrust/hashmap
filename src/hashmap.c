@@ -13,12 +13,6 @@
 #include <string.h>         /* strncmp */
 #include "hashmap.h"
 
-#if defined (_OPENMP)
-#define CRITICAL _Pragma ("omp critical (barrust_hashmap_lock)")
-#else
-#define CRITICAL
-#endif
-
 
 #define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.25       /* arbitrary */
