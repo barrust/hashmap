@@ -1,3 +1,7 @@
+/*
+	Default tests for using the hashmap utility functions
+*/
+
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
 

@@ -1,4 +1,6 @@
-
+/*
+	Default tests for using the hashmap
+*/
 
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
@@ -169,7 +171,6 @@ int main(int argc, char **argv) {
                 res = -1;
             }
         } else if (*v != 3 * i) {
-            printf("We had an odd that didn't match... i = %d\tval: %d\tmult: %d\n", i, *v, *v / i);
             res = -1;
         }
     }
