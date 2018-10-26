@@ -78,7 +78,7 @@ void* hashmap_get(HashMap *h, char *key) {
     uint64_t i, hash = h->hash_function(key);
     int e;
     i = hash % h->number_nodes;
-    return __get_node(h, key, hash, &i, &e);;
+    return __get_node(h, key, hash, &i, &e);
 }
 
 void* hashmap_remove(HashMap *h, char *key) {

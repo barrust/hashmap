@@ -50,10 +50,12 @@ int main(int argc, char** argv) {
     HashMap h;
     hashmap_init(&h);
     int i;
+
     #pragma parallel for private(i)
     for (i = 0; i < 500000; i++) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
+
         #pragma critical (set_lock)
         {
             hashmap_add_int(&h, key, i);
@@ -63,8 +65,11 @@ int main(int argc, char** argv) {
 }
 ```
 
-All but `hashmap_get` needs to be guarded against race conditions as the
-hashmap will grow as needed.
+Guards must be used when inserting and removing elements as the layout of the
+nodes may change. When there are only retrievals, `hashmap_get`, then there is
+no need for guards. If the retrievals are simultaneous to the insertions and
+deletions then guards must be placed around `hashmap_get` to ensure that the
+node location doesn't change. 
 
 ## Required Compile Flags:
 None
