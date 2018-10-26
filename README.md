@@ -14,7 +14,7 @@ library.
 MIT 2016
 
 ## Usage:
-```c
+``` c
 #include "hashmap.h"
 
 HashMap h;
@@ -26,15 +26,45 @@ hashmap_set_string(&h, "twitter", "the sound of little birds");
 
 char* tmp = (char*)hashmap_get(&h, "google");
 if (tmp == NULL) {
-	printf("'google' was not in the hashmap\n");
+    printf("'google' was not in the hashmap\n");
 } else {
-	printf("key: test\tvalue: %s\n", tmp);
-	hashmap_set_string(&h, "google", "search engine, android, web ads, and automobiles");
+    printf("key: test\tvalue: %s\n", tmp);
+    hashmap_set_string(&h, "google", "search engine, android, web ads, and automobiles");
 }
 
 hashmap_stats(&h);
 hashmap_destroy(&h);
 ```
+
+## Thread safety
+
+Due to the the overhead of enforcing thread safety, it is up to the user to
+ensure that each thread has controlled access to the hashmap. For **OpenMP**
+code, the following should suffice.
+
+``` c
+#include "set.h"
+#include <omp.h>
+
+int main(int argc, char** argv) {
+    HashMap h;
+    hashmap_init(&h);
+    int i;
+    #pragma parallel for private(i)
+    for (i = 0; i < 500000; i++) {
+        char key[KEY_LEN] = {0};
+        sprintf(key, "%d", i);
+        #pragma critical (set_lock)
+        {
+            hashmap_add_int(&h, key, i);
+        }
+    }
+    hashmap_destroy(&h);
+}
+```
+
+All but `hashmap_get` needs to be guarded against race conditions as the
+hashmap will grow as needed.
 
 ## Required Compile Flags:
 None
@@ -42,6 +72,3 @@ None
 ### Future Enhancements:
 * Allow for sorting from the `hashmap_keys` function
 * Prove if relaying out nodes needs to do more than 1 loop
-* Add ability to merge Hashmaps
-* Add additional utility functions
-  * ???

@@ -1,9 +1,11 @@
 ## Current Version
 
-### Master
+### Version 0.7.8
 
-* Fix segfault when calculating stats on empty hashmap
+* Removed force **OpenMP** guards
 * Added utility insert functions: float, double, and long
+* Speed up the node removal process
+* Fix segfault when calculating stats on empty hashmap
 
 ### Version 0.7.7
 

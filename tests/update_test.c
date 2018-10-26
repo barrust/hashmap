@@ -1,3 +1,7 @@
+/*
+	Default tests for using the hashmap utility functions
+*/
+
 #include <stdlib.h>         /* malloc, etc */
 #include <stdio.h>          /* printf */
 
@@ -21,7 +25,7 @@ void success_or_failure(int res);
 int main(int argc, char **argv) {
     printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
-	int num_els = 500000; //8000000;
+    int num_els = 500000; //8000000;
 
 
     HashMap h;
@@ -119,11 +123,11 @@ int main(int argc, char **argv) {
     res = 0;
 
     printf("HashMap: Stats: \n");
-	hashmap_stats(&h);
+    hashmap_stats(&h);
 
     printf("HashMap: Destroy: ");
-	hashmap_destroy(&h);
-	success_or_failure(0);
+    hashmap_destroy(&h);
+    success_or_failure(0);
 
     return 0;
 }
@@ -131,9 +135,9 @@ int main(int argc, char **argv) {
 
 
 void success_or_failure(int res) {
-	if (res == 0) {
-		printf(KGRN "success!\n" KNRM);
-	} else {
-		printf(KRED "failure!\n" KNRM);
-	}
+    if (res == 0) {
+        printf(KGRN "success!\n" KNRM);
+    } else {
+        printf(KRED "failure!\n" KNRM);
+    }
 }
