@@ -51,12 +51,12 @@ int main(int argc, char** argv) {
     hashmap_init(&h);
     int i;
 
-    #pragma parallel for private(i)
+    #pragma omp parallel for private(i)
     for (i = 0; i < 500000; i++) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
 
-        #pragma critical (set_lock)
+        #pragma omp critical (set_lock)
         {
             hashmap_add_int(&h, key, i);
         }
