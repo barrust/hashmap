@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.7.8
+***     Version: 0.8.0
 ***     Purpose: Simple, yet effective, hashmap implementation
 ***
 ***     License: MIT 2015
@@ -21,10 +21,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.7.8"
+#define HASHMAP_VERSION "0.8.0"
 #define HASHMAP_MAJOR 0
-#define HASHMAP_MINOR 7
-#define HASHMAP_REVISION 8
+#define HASHMAP_MINOR 8
+#define HASHMAP_REVISION 0
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -56,7 +56,7 @@ typedef struct hashmap {
 int hashmap_init(HashMap *h);
 
 /* initialize the hashmap using the provided hashing function */
-int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function);
+int hashmap_init_alt(HashMap *h,  uint64_t num_els, hashmap_hash_function hash_function);
 
 /*  frees all memory allocated by the hashmap library
     NOTE: If the value is malloc'd memory, it is up to the user to free it */
