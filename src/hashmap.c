@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.7.8
+***     Version: 0.8.0
 ***
 ***     License: MIT 2015
 ***
@@ -37,11 +37,16 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 ***        FUNCTION DEFINITIONS
 *******************************************************************************/
 int hashmap_init(HashMap *h) {
-    return hashmap_init_alt(h, NULL);
+    return hashmap_init_alt(h, INITIAL_NUM_ELEMENTS, NULL);
 }
 
-int hashmap_init_alt(HashMap *h, hashmap_hash_function hash_function) {
-    return __allocate_hashmap(h, INITIAL_NUM_ELEMENTS, hash_function);
+int hashmap_init_alt(HashMap *h,  uint64_t num_els, hashmap_hash_function hash_function) {
+    h->nodes = (hashmap_node**) calloc(num_els, sizeof(hashmap_node*));
+    if (h->nodes == NULL) {return HASHMAP_FAILURE;}
+    h->number_nodes = num_els;
+    h->used_nodes = 0;
+    h->hash_function = (hash_function == NULL) ? &default_hash : hash_function;
+    return HASHMAP_SUCCESS;
 }
 
 void hashmap_destroy(HashMap *h) {
@@ -194,30 +199,18 @@ static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/c
 }
 
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function) {
-    uint64_t i;
-    if (num_els == INITIAL_NUM_ELEMENTS) {
-        h->nodes = (hashmap_node**) malloc(num_els * sizeof(hashmap_node*));
-        if (h->nodes == NULL) {return HASHMAP_FAILURE;}
-        h->number_nodes = num_els;
-        for (i = 0; i < h->number_nodes; i++) {
-            h->nodes[i] = NULL;
-        }
-        h->used_nodes = 0;
-        h->hash_function = (hash_function == NULL) ? &default_hash : hash_function;
-    } else {
-        hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
-        if (h->nodes == NULL) {return HASHMAP_FAILURE;}
-        h->nodes = tmp;
-        uint64_t orig_num_els = h->number_nodes;
-        for (i = orig_num_els; i < num_els; i++) {
-            h->nodes[i] = NULL;
-        }
-        h->number_nodes = num_els;
-        int q = 0;
-        // TODO: The math to see if this ever needs to be done more than once
-        while (q == 0) {
-            q = __relayout_nodes(h, 0, 1);
-        }
+    hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
+    if (h->nodes == NULL) {return HASHMAP_FAILURE;}
+    h->nodes = tmp;
+    uint64_t orig_num_els = h->number_nodes;
+    for (uint64_t i = orig_num_els; i < num_els; i++) {
+        h->nodes[i] = NULL;
+    }
+    h->number_nodes = num_els;
+    int q = 0;
+    // TODO: The math to see if this ever needs to be done more than once
+    while (q == 0) {
+        q = __relayout_nodes(h, 0, 1);
     }
     return HASHMAP_SUCCESS;
 }
@@ -364,7 +357,7 @@ static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
     return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
 }
 
-void __merge_sort(uint64_t *arr, uint64_t length) {
+static void __merge_sort(uint64_t *arr, uint64_t length) {
     if (length < 2) {
         return;
     }
@@ -375,7 +368,7 @@ void __merge_sort(uint64_t *arr, uint64_t length) {
 }
 
 
-void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
+static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
     uint64_t *tmp = malloc((length) * sizeof(uint64_t));
     uint64_t l = 0, r = mid, i = 0;
     while(l < mid && r < length) { // sort until one half is empty
