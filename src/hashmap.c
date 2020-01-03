@@ -357,7 +357,7 @@ static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx) {
     return (i < idx) ? i + num_nodes - idx + 1 : 1 + i - idx;
 }
 
-void __merge_sort(uint64_t *arr, uint64_t length) {
+static void __merge_sort(uint64_t *arr, uint64_t length) {
     if (length < 2) {
         return;
     }
@@ -368,7 +368,7 @@ void __merge_sort(uint64_t *arr, uint64_t length) {
 }
 
 
-void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
+static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
     uint64_t *tmp = malloc((length) * sizeof(uint64_t));
     uint64_t l = 0, r = mid, i = 0;
     while(l < mid && r < length) { // sort until one half is empty
