@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
+***     Version: 0.8.1
 ***     Purpose: Simple, yet effective, hashmap implementation
 ***
 ***     License: MIT 2015
@@ -21,10 +21,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.8.0"
+#define HASHMAP_VERSION "0.8.1"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 8
-#define HASHMAP_REVISION 0
+#define HASHMAP_REVISION 1
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0

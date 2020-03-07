@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
+***     Version: 0.8.1
 ***
 ***     License: MIT 2015
 ***
@@ -58,7 +58,7 @@ void hashmap_destroy(HashMap *h) {
 
 void hashmap_clear(HashMap *h) {
     uint64_t i;
-    for (i = 0; i < h->number_nodes; i++) {
+    for (i = 0; i < h->number_nodes; ++i) {
         if (h->nodes[i] != NULL) {
             free(h->nodes[i]->key);
             if (h->nodes[i]->mallocd == 0) {
@@ -136,12 +136,12 @@ void hashmap_stats(HashMap *h) {
 char** hashmap_keys(HashMap *h) {
     char** keys = calloc(h->used_nodes, sizeof(char*));
     uint64_t i, j = 0;
-    for (i = 0; i < h->number_nodes; i++) {
+    for (i = 0; i < h->number_nodes; ++i) {
         if (h->nodes[i] != NULL) {
             int len = strlen(h->nodes[i]->key);
             keys[j] = calloc(len + 1, sizeof(char));
             memcpy(keys[j], h->nodes[i]->key, len);
-            j++;
+            ++j;
         }
     }
     return keys;
@@ -190,7 +190,7 @@ static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/c
     char *p = calloc(len + 1, sizeof(char));
     memcpy(p, key, len);
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
-    for (i = 0; i < len; i++){
+    for (i = 0; i < len; ++i){
         h = h ^ (unsigned char) p[i];
         h = h * 1099511628211ULL; // FNV_PRIME 64 bit
     }
@@ -203,7 +203,7 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_functi
     if (h->nodes == NULL) {return HASHMAP_FAILURE;}
     h->nodes = tmp;
     uint64_t orig_num_els = h->number_nodes;
-    for (uint64_t i = orig_num_els; i < num_els; i++) {
+    for (uint64_t i = orig_num_els; i < num_els; ++i) {
         h->nodes[i] = NULL;
     }
     h->number_nodes = num_els;
@@ -218,7 +218,7 @@ static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_functi
 static int __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null) {
     int moved_one = 1;
     uint64_t i;
-    for (i = loc; i < h->number_nodes; i++) {
+    for (i = loc; i < h->number_nodes; ++i) {
         if(h->nodes[i] != NULL) {
             uint64_t id;
             int error;
@@ -290,7 +290,7 @@ static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, ui
     h->nodes[i]->value = value;
     h->nodes[i]->hash = hash;
     h->nodes[i]->mallocd = mallocd;
-    h->used_nodes++;
+    ++h->used_nodes;
 }
 
 static inline float __get_fullness(HashMap *h) {
@@ -303,9 +303,9 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
     if (h->used_nodes != 0) {
         uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
         uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
-        for (i = 0; i < h->number_nodes; i++) {
+        for (i = 0; i < h->number_nodes; ++i) {
             if (h->nodes[i] != NULL) {
-                cur++;
+                ++cur;
                 uint64_t idx = h->nodes[i]->hash % h->number_nodes;
                 uint64_t O = __calc_big_o(h->number_nodes, i, idx);
                 sum_used += O;
@@ -315,7 +315,7 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
                 }
                 hashes[j] = h->nodes[i]->hash;
                 idxs[j] = idx;
-                j++;
+                ++j;
             } else {
                 sum += 1;
                 if (wc < cur) { wc = cur; }
@@ -328,12 +328,12 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
         __merge_sort(idxs, h->used_nodes);
 
         // then do some maths to see if there are actual collisions
-        for (i = 0; i < h->used_nodes - 1; i++) {
+        for (i = 0; i < h->used_nodes - 1; ++i) {
             if(hashes[i] == hashes[i + 1]) {
-                hash_col++;
+                ++hash_col;
             }
             if(idxs[i] == idxs[i + 1]) {
-                idx_col++;
+                ++idx_col;
             }
         }
         free(hashes);
@@ -382,7 +382,7 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
         tmp[i++] = arr[r++];
     }
     // move it over
-    for (i = 0; i < length; i++) {
+    for (i = 0; i < length; ++i) {
         arr[i] = tmp[i];
     }
     free(tmp);
