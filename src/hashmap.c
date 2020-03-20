@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.1
+***     Version: 0.8.2
 ***
 ***     License: MIT 2015
 ***
@@ -21,14 +21,14 @@
 /*******************************************************************************
 ***        PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t default_hash(char *key);
+static uint64_t default_hash(const char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function);
 static int   __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null);
-static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error);
-static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
-static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd);
+static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error);
+static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
+static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallocd);
 static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
 static void __merge_sort(uint64_t *arr, uint64_t length);
 static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
@@ -71,22 +71,22 @@ void hashmap_clear(HashMap *h) {
     h->used_nodes = 0;
 }
 
-void* hashmap_set(HashMap *h, char *key, void *value) {
+void* hashmap_set(HashMap *h, const char *key, void *value) {
     return __hashmap_set(h, key, value, -1);
 }
 
-void* hashmap_set_alt(HashMap *h, char *key, void * value) {
+void* hashmap_set_alt(HashMap *h, const char *key, void * value) {
     return __hashmap_set(h, key, value, 0);
 }
 
-void* hashmap_get(HashMap *h, char *key) {
+void* hashmap_get(HashMap *h, const char *key) {
     uint64_t i, hash = h->hash_function(key);
     int e;
     i = hash % h->number_nodes;
     return __get_node(h, key, hash, &i, &e);
 }
 
-void* hashmap_remove(HashMap *h, char *key) {
+void* hashmap_remove(HashMap *h, const char *key) {
     uint64_t i, hash = h->hash_function(key);
     i = hash % h->number_nodes;
     int e;
@@ -151,32 +151,32 @@ char** hashmap_keys(HashMap *h) {
 ***        UTILITY INSERTS
 *******************************************************************************/
 
-int* hashmap_set_int(HashMap *h, char *key, int value) {
+int* hashmap_set_int(HashMap *h, const char *key, int value) {
     int *ptr = malloc(sizeof(int));
     *ptr = value;
     return __hashmap_set(h, key, ptr, 0);
 }
 
-long* hashmap_set_long(HashMap *h, char *key, long value) {
+long* hashmap_set_long(HashMap *h, const char *key, long value) {
     long *ptr = malloc(sizeof(long));
     *ptr = value;
     return __hashmap_set(h, key, ptr, 0);
 }
 
-char* hashmap_set_string(HashMap *h, char *key, char *value) {
+char* hashmap_set_string(HashMap *h, const char *key, char *value) {
     int len = strlen(value);
     char *ptr = calloc(len + 1, sizeof(char));
     memcpy(ptr, value, len);
     return __hashmap_set(h, key, ptr, 0);
 }
 
-float* hashmap_set_float(HashMap *h, char *key, float value) {
+float* hashmap_set_float(HashMap *h, const char *key, float value) {
     float *ptr = malloc(sizeof(float));
     *ptr = value;
     return __hashmap_set(h, key, ptr, 0);
 }
 
-double* hashmap_set_double(HashMap *h, char *key, float value) {
+double* hashmap_set_double(HashMap *h, const char *key, float value) {
     double *ptr = malloc(sizeof(double));
     *ptr = value;
     return __hashmap_set(h, key, ptr, 0);
@@ -185,16 +185,13 @@ double* hashmap_set_double(HashMap *h, char *key, float value) {
 /*******************************************************************************
 ***        PRIVATE FUNCTIONS
 *******************************************************************************/
-static uint64_t default_hash(char *key) { // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
+static uint64_t default_hash(const char *key) { // FNV-1a hash (http://www.isthe.com/chongo/tech/comp/fnv/)
     int i, len = strlen(key);
-    char *p = calloc(len + 1, sizeof(char));
-    memcpy(p, key, len);
     uint64_t h = 14695981039346656073ULL; // FNV_OFFSET 64 bit
     for (i = 0; i < len; ++i){
-        h = h ^ (unsigned char) p[i];
+        h = h ^ (unsigned char) key[i];
         h = h * 1099511628211ULL; // FNV_PRIME 64 bit
     }
-    free(p);
     return h;
 }
 
@@ -237,7 +234,7 @@ static int __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null) {
     return moved_one;
 }
 
-static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *error) {
+static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error) {
     *error = 0; // no errors
     uint64_t idx = *i = hash % h->number_nodes;
     int len = strlen(key);
@@ -257,7 +254,7 @@ static void* __get_node(HashMap *h, char *key, uint64_t hash, uint64_t *i, int *
     }
 }
 
-static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
+static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallocd) {
     // check to see if we need to expand the hashmap
     if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
         uint64_t num_nodes = h->number_nodes;
@@ -282,7 +279,7 @@ static void* __hashmap_set(HashMap *h, char *key, void *value, short mallocd) {
     return value;
 }
 
-static void  __assign_node(HashMap *h, char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
+static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
     int len = strlen(key);
     h->nodes[i] = malloc(sizeof(hashmap_node));
     h->nodes[i]->key = calloc(len + 1, sizeof(char));

@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.1
+***     Version: 0.8.2
 ***     Purpose: Simple, yet effective, hashmap implementation
 ***
 ***     License: MIT 2015
@@ -21,10 +21,10 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-#define HASHMAP_VERSION "0.8.1"
+#define HASHMAP_VERSION "0.8.2"
 #define HASHMAP_MAJOR 0
 #define HASHMAP_MINOR 8
-#define HASHMAP_REVISION 1
+#define HASHMAP_REVISION 2
 
 #define HASHMAP_FAILURE -1
 #define HASHMAP_SUCCESS 0
@@ -33,7 +33,7 @@
 #define hashmap_number_keys(h)   (h.used_nodes)
 
 
-typedef uint64_t (*hashmap_hash_function) (char *key);
+typedef uint64_t (*hashmap_hash_function) (const char *key);
 
 /*******************************************************************************
 ***    Data structures
@@ -69,22 +69,22 @@ void hashmap_clear(HashMap *h);
     If it updates instead of adds, returns the pointer to the replaced value,
     (unless it is mallocd by the hashmap on insert) otherwise it returns the
     pointer to the new value. Returns NULL if there is an error. */
-void* hashmap_set(HashMap *h, char *key, void *value);
+void* hashmap_set(HashMap *h, const char *key, void *value);
 
 /*  Adds the key to the hashmap or updates the key if already present. Also
     signals to the system to do a simple 'free' command on the value on
     destruction. */
-void* hashmap_set_alt(HashMap *h, char *key, void * value);
+void* hashmap_set_alt(HashMap *h, const char *key, void * value);
 
 /* Returns the pointer to the value of the found key, or NULL if not found */
-void* hashmap_get(HashMap *h, char *key);
+void* hashmap_get(HashMap *h, const char *key);
 
 /*  Removes a key from the hashmap. NULL will be returned if it is not present.
     If it is designated to be cleaned up, the memory will be free'd and NULL
     returned. Otherwise, the pointer to the value will be returned.
 
     TODO: Add a int flag to signal if NULL is b/c it was freed or not present */
-void* hashmap_remove(HashMap *h, char *key);
+void* hashmap_remove(HashMap *h, const char *key);
 
 /*  Returns an array of all keys in the hashmap.
     NOTE: It is up to the caller to free the array returned. */
@@ -95,23 +95,23 @@ void hashmap_stats(HashMap *h);
 
 /*  Easily add an int, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-int* hashmap_set_int(HashMap *h, char *key, int value);
+int* hashmap_set_int(HashMap *h, const char *key, int value);
 
 /*  Easily add a long, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-long* hashmap_set_long(HashMap *h, char *key, long value);
+long* hashmap_set_long(HashMap *h, const char *key, long value);
 
 /*  Easily add a float, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-float* hashmap_set_float(HashMap *h, char *key, float value);
+float* hashmap_set_float(HashMap *h, const char *key, float value);
 
 /*  Easily add a double, this will malloc everything for the user and will
     signal to de-allocate the memory on destruction */
-double* hashmap_set_double(HashMap *h, char *key, float value);
+double* hashmap_set_double(HashMap *h, const char *key, float value);
 
 /*  Easily add a string, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-char* hashmap_set_string(HashMap *h, char *key, char *value);
+char* hashmap_set_string(HashMap *h, const char *key, char *value);
 
 /* Return the fullness of the hashmap */
 float hashmap_get_fullness(HashMap *h);
