@@ -10,6 +10,9 @@ a hashmap in C programs. It was developed to provide a basis for testing and
 benchmarking performance along with providing a purposeful, low overhead
 library.
 
+To use the library, copy the `src/hashmap.h` and `src/hashmap.c` files into your
+project and include it where needed.
+
 ## License
 MIT 2016
 
@@ -69,7 +72,7 @@ Guards must be used when inserting and removing elements as the layout of the
 nodes may change. When there are only retrievals, `hashmap_get`, then there is
 no need for guards. If the retrievals are simultaneous to the insertions and
 deletions then guards must be placed around `hashmap_get` to ensure that the
-node location doesn't change. 
+node location doesn't change.
 
 ## Required Compile Flags:
 None
