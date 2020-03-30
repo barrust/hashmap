@@ -4,7 +4,7 @@ DISTDIR=dist
 SRCDIR=src
 TESTDIR=tests
 
-all: clean hashmap unified
+all: hashmap unified
 	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/hashmap_test.c -o ./dist/hmt $(CCFLAGS)
 	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/update_test.c -o ./dist/ut $(CCFLAGS)
 
