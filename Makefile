@@ -12,7 +12,7 @@ hashmap:
 	$(CC) -c $(SRCDIR)/hashmap.c -o $(DISTDIR)/hashmap.o $(CCFLAGS)
 
 clean:
-	rm -rf ./$(DISTDIR)/*
+	if [ -d "./$(DISTDIR)/" ]; then rm -rf ./$(DISTDIR)/*; fi
 
 unified:
 	python unified_header.py
