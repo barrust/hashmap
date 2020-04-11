@@ -1,5 +1,13 @@
 ## Current Version
 
+### Version 0.8.0
+
+* Micro optimizations
+* Allow for a variable number of elements in initialization of the hashmap
+* Use of `const char*` as appropriate
+* Improved hashing speed
+
+
 ### Version 0.7.8
 
 * Removed force **OpenMP** guards

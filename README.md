@@ -11,7 +11,9 @@ benchmarking performance along with providing a purposeful, low overhead
 library.
 
 To use the library, copy the `src/hashmap.h` and `src/hashmap.c` files into your
-project and include it where needed.
+project, compile and link the library, and include it where needed.
+
+**NOTE:** The key is of type `char*` as in a `c-string`
 
 ## License
 MIT 2016
