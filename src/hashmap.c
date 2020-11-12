@@ -24,7 +24,7 @@
 static uint64_t default_hash(const char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static int   __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function);
+static int   __allocate_hashmap(HashMap *h, uint64_t num_els);
 static int   __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null);
 static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
@@ -195,7 +195,7 @@ static uint64_t default_hash(const char *key) { // FNV-1a hash (http://www.isthe
     return h;
 }
 
-static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function) {
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els) {
     hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
     if (h->nodes == NULL) {return HASHMAP_FAILURE;}
     h->nodes = tmp;
@@ -237,7 +237,7 @@ static int __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null) {
 static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error) {
     *error = 0; // no errors
     uint64_t idx = *i = hash % h->number_nodes;
-    int len = strlen(key);
+    size_t len = strlen(key);
     while (1) {
         if (h->nodes[*i] == NULL) { //not found
             return NULL;
@@ -258,7 +258,7 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
     // check to see if we need to expand the hashmap
     if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
         uint64_t num_nodes = h->number_nodes;
-        __allocate_hashmap(h, num_nodes * 2, h->hash_function);
+        __allocate_hashmap(h, num_nodes * 2);
     }
     // get the hash value
     uint64_t hash = h->hash_function(key);  // TODO: move out of this function to better parallelize
