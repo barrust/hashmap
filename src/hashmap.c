@@ -262,15 +262,15 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
     int error;
     void * tmp = __get_node(h, key, hash, &i, &error);
     if (tmp == NULL && error == -1) {
-        printf("Error: Unable to insert due to the hashmap being full\n");
+        fprintf(stderr, "Error: Unable to insert due to the hashmap being full\n");
+        return NULL;
     } else  if (tmp != NULL) {
-        if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
+        if (h->nodes[i]->mallocd == 0) {
+            free(h->nodes[i]->value);
+        }
         h->nodes[i]->value = value;
     } else {
         __assign_node(h, key, value, mallocd, i, hash);
-    }
-    if (tmp == NULL && error == -1) {
-        return NULL;
     }
     return value;
 }

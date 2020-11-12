@@ -35,6 +35,41 @@ MU_TEST(test_non_default_setup) {
     hashmap_destroy(&q);
 }
 
+/*******************************************************************************
+*   Test Utility Setters
+*******************************************************************************/
+MU_TEST(test_hashmap_set_int) {
+    int* t = hashmap_set_int(&h, "100", 100);
+    mu_assert_int_eq(100, *t);
+    mu_assert_int_eq(1, hashmap_number_keys(h));
+}
+
+MU_TEST(test_hashmap_set_long) {
+    long* t = hashmap_set_long(&h, "100", 100);
+    mu_assert_int_eq(100, *t);
+    mu_assert_int_eq(1, hashmap_number_keys(h));
+}
+
+MU_TEST(test_hashmap_set_float) {
+    float v = 0.111;
+    float* t = hashmap_set_float(&h, "100", v);
+    mu_assert_double_eq(v, *t);
+    mu_assert_int_eq(1, hashmap_number_keys(h));
+}
+
+MU_TEST(test_hashmap_set_double) {
+    double v = 0.1110000833869;
+    double* t = hashmap_set_double(&h, "100", v);
+    mu_assert_double_eq(v, *t);
+    mu_assert_int_eq(1, hashmap_number_keys(h));
+}
+
+MU_TEST(test_hashmap_set_string) {
+    char* t = hashmap_set_string(&h, "key", "another value");
+    mu_assert_string_eq(t, "another value");
+    mu_assert_int_eq(1, hashmap_number_keys(h));
+}
+
 
 
 /*******************************************************************************
@@ -46,6 +81,13 @@ MU_TEST_SUITE(test_suite) {
     /* setup */
     MU_RUN_TEST(test_default_setup);
     MU_RUN_TEST(test_non_default_setup);
+
+    /* utility setters */
+    MU_RUN_TEST(test_hashmap_set_int);
+    MU_RUN_TEST(test_hashmap_set_long);
+    MU_RUN_TEST(test_hashmap_set_float);
+    MU_RUN_TEST(test_hashmap_set_double);
+    MU_RUN_TEST(test_hashmap_set_string);
 }
 
 
