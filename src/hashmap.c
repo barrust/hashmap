@@ -14,7 +14,6 @@
 #include "hashmap.h"
 
 
-#define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.25       /* arbitrary */
 
 
@@ -36,9 +35,6 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 /*******************************************************************************
 ***        FUNCTION DEFINITIONS
 *******************************************************************************/
-int hashmap_init(HashMap *h) {
-    return hashmap_init_alt(h, INITIAL_NUM_ELEMENTS, NULL);
-}
 
 int hashmap_init_alt(HashMap *h,  uint64_t num_els, hashmap_hash_function hash_function) {
     h->nodes = (hashmap_node**) calloc(num_els, sizeof(hashmap_node*));
@@ -295,12 +291,13 @@ static inline float __get_fullness(HashMap *h) {
 }
 
 static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
-    uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
+    uint64_t sum = 0, max = 0, wc = 0, sum_used = 0;
     unsigned int hash_col = 0, idx_col = 0;
     if (h->used_nodes != 0) {
+        uint64_t j = 0, cur = 0;
         uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
         uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
-        for (i = 0; i < h->number_nodes; ++i) {
+        for (uint64_t i = 0; i < h->number_nodes; ++i) {
             if (h->nodes[i] != NULL) {
                 ++cur;
                 uint64_t idx = h->nodes[i]->hash % h->number_nodes;
@@ -325,7 +322,7 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
         __merge_sort(idxs, h->used_nodes);
 
         // then do some maths to see if there are actual collisions
-        for (i = 0; i < h->used_nodes - 1; ++i) {
+        for (uint64_t i = 0; i < h->used_nodes - 1; ++i) {
             if(hashes[i] == hashes[i + 1]) {
                 ++hash_col;
             }

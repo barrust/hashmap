@@ -27,6 +27,14 @@ MU_TEST(test_default_setup) {
     mu_assert_int_eq(0, h.used_nodes);
 }
 
+MU_TEST(test_non_default_setup) {
+    HashMap q;
+    hashmap_init_alt(&q, 500, NULL); // for now, ignore the hash function
+    mu_assert_int_eq(500, q.number_nodes);
+    mu_assert_int_eq(0, q.used_nodes);
+    hashmap_destroy(&q);
+}
+
 
 
 /*******************************************************************************
@@ -37,6 +45,7 @@ MU_TEST_SUITE(test_suite) {
 
     /* setup */
     MU_RUN_TEST(test_default_setup);
+    MU_RUN_TEST(test_non_default_setup);
 }
 
 
