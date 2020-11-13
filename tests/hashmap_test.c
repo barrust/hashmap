@@ -33,7 +33,7 @@ void success_or_failure(int res);
 
 
 
-int main(int argc, char **argv) {
+int main() {
     printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
     int num_els = 500000; //8000000;
@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     res = 0;
 
     printf("HashMap: Correct number of elements: ");
-    if (h.used_nodes == num_els) {
+    if (h.used_nodes == (unsigned int)num_els) {
         success_or_failure(0);
     } else {
         success_or_failure(-1);
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
     success_or_failure(0);
 
     printf("HashMap: Free the keys returned: ");
-    for (i = 0; i < hashmap_number_keys(h); i++) {
+    for (i = 0; (unsigned int)i < hashmap_number_keys(h); i++) {
         free(keys[i]);
     }
     free(keys);
