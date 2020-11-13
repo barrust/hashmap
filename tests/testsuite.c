@@ -169,6 +169,62 @@ MU_TEST(test_hashmap_get_not_found) {
     mu_assert_not_null(hashmap_get(&h, "2999"));
 }
 
+MU_TEST(test_hashmap_stat) {
+    for (int i = 0; i < 55000; i++) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        hashmap_set(&h, key, val);
+    }
+
+    /* save the printout to a buffer */
+    int stdout_save;
+    char buffer[2046] = {0};
+    fflush(stdout); //clean everything first
+    stdout_save = dup(STDOUT_FILENO); //save the stdout state
+    freopen("output_file", "a", stdout); //redirect stdout to null pointer
+    setvbuf(stdout, buffer, _IOFBF, 1024); //set buffer to stdout
+
+    hashmap_stats(&h);
+
+    /* reset stdout */
+    freopen("output_file", "a", stdout); //redirect stdout to null again
+    dup2(stdout_save, STDOUT_FILENO); //restore the previous state of stdout
+    setvbuf(stdout, NULL, _IONBF, 0); //disable buffer to print to screen instantly
+
+    // Not sure this is necessary, but it cleans it up
+    remove("output_file");
+
+    mu_assert_not_null(buffer);
+    mu_assert_string_eq("HashMap:\n\
+    Number Nodes: 262144\n\
+    Used Nodes: 55000\n\
+    Fullness: 20.980835%\n\
+    Average O(n): 1.038040\n\
+    Average Used O(n): 1.181309\n\
+    Max O(n): 7\n\
+    Max Consecutive Buckets Used: 10\n\
+    Number Hash Collisions: 0\n\
+    Number Index Collisions: 7328\n\
+    Size on disk (bytes): 3857184\n", buffer);
+}
+
+MU_TEST(test_hashmap_fullness) {
+    /* on empty */
+    mu_assert_double_eq(0.0, hashmap_get_fullness(&h));
+
+    for (int i = 0; i < 3000; i++) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        hashmap_set(&h, key, val);
+    }
+
+    mu_assert_double_eq(18.310546875, hashmap_get_fullness(&h));
+}
+
 /*******************************************************************************
 *   Testsuite
 *******************************************************************************/
@@ -194,6 +250,10 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_hashmap_get);
     MU_RUN_TEST(test_hashmap_get_changed);
     MU_RUN_TEST(test_hashmap_get_not_found);
+
+    /* */
+    MU_RUN_TEST(test_hashmap_stat);
+    MU_RUN_TEST(test_hashmap_fullness);
 }
 
 
