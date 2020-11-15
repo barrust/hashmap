@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
+***     Version: 0.8.1
 ***
 ***     License: MIT 2015
 ***

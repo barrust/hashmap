@@ -1,5 +1,5 @@
 # hashmap
-Hashmap implementation written in C.
+Hashmap implementation written in **C**
 
 Hashmaps are a key value store with quick look up times. The hashmap_stats()
 function will provide a summary of the current lookup times including average,

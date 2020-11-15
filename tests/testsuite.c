@@ -103,7 +103,7 @@ MU_TEST(test_hashmap_set_alt) {
 *   Test Getters
 *******************************************************************************/
 MU_TEST(test_hashmap_get) {
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -113,7 +113,7 @@ MU_TEST(test_hashmap_get) {
 
     /* now test things out! */
     int errors = 0;
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char tmp[15] = {0};
         sprintf(key, "%d", i);
@@ -125,7 +125,7 @@ MU_TEST(test_hashmap_get) {
 }
 
 MU_TEST(test_hashmap_get_changed) {
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -133,7 +133,7 @@ MU_TEST(test_hashmap_get_changed) {
         hashmap_set(&h, key, val);
     }
 
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -143,7 +143,7 @@ MU_TEST(test_hashmap_get_changed) {
 
     /* now test things out! */
     int errors = 0;
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char tmp[15] = {0};
         sprintf(key, "%d", i);
@@ -156,7 +156,7 @@ MU_TEST(test_hashmap_get_changed) {
 
 MU_TEST(test_hashmap_get_not_found) {
 
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -169,8 +169,92 @@ MU_TEST(test_hashmap_get_not_found) {
     mu_assert_not_null(hashmap_get(&h, "2999"));
 }
 
+/*******************************************************************************
+*   Test Removal
+*******************************************************************************/
+MU_TEST(test_hashmap_remove) {
+    for (int i = 0; i < 3000; ++i) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        hashmap_set(&h, key, val);
+    }
+
+    // test getting back what we expected
+    int errors = 0;
+    for (int i = 0; i < 3000; i+=2) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        void* v = hashmap_remove(&h, key);
+        errors += (strcmp(val, v) == 0) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    // test not present what was removed
+    errors = 0;
+    for (int i = 0; i < 3000; i+=2) {
+        char key[15] = {0};
+        sprintf(key, "%d", i);
+        void* v = hashmap_remove(&h, key);
+        errors += (v == NULL) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    // test present what was left
+    errors = 0;
+    for (int i = 1; i < 3000; i+=2) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        void* v = hashmap_get(&h, key);
+        errors += (v != NULL && strcmp(v, val) == 0) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+}
+
+/*******************************************************************************
+*   Test Keys
+*******************************************************************************/
+MU_TEST(test_hashmap_keys) {
+    // add some values
+    for (int i = 0; i < 3000; ++i) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        hashmap_set(&h, key, val);
+    }
+
+    char** keys = hashmap_keys(&h);
+    // make some tests
+    int errors = 0;
+    unsigned s = hashmap_number_keys(h);
+    for (unsigned int i = 0; i < s; ++i) {
+        void* val = hashmap_get(&h, keys[i]);
+        int key_i = atoi(keys[i]);
+        char val_c[15] = {0};
+        sprintf(val_c, "%d-v", key_i);
+        errors += (val != NULL && strcmp(val, val_c) == 0) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    // free the data
+    for (unsigned int i = 0; i < hashmap_number_keys(h); ++i) {
+        free(keys[i]);
+    }
+    free(keys);
+
+}
+
+/*******************************************************************************
+*   Test Statistics
+*******************************************************************************/
 MU_TEST(test_hashmap_stat) {
-    for (int i = 0; i < 55000; i++) {
+    for (int i = 0; i < 55000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -214,7 +298,7 @@ MU_TEST(test_hashmap_fullness) {
     /* on empty */
     mu_assert_double_eq(0.0, hashmap_get_fullness(&h));
 
-    for (int i = 0; i < 3000; i++) {
+    for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
         char val[15] = {0};
         sprintf(key, "%d", i);
@@ -251,7 +335,13 @@ MU_TEST_SUITE(test_suite) {
     MU_RUN_TEST(test_hashmap_get_changed);
     MU_RUN_TEST(test_hashmap_get_not_found);
 
-    /* */
+    /* remove */
+    MU_RUN_TEST(test_hashmap_remove);
+
+    /* keys */
+    MU_RUN_TEST(test_hashmap_keys);
+
+    /* statistics */
     MU_RUN_TEST(test_hashmap_stat);
     MU_RUN_TEST(test_hashmap_fullness);
 }
