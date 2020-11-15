@@ -216,6 +216,50 @@ MU_TEST(test_hashmap_remove) {
     mu_assert_int_eq(0, errors);
 }
 
+MU_TEST(test_hashmap_remove_mallocd) {
+    for (int i = 0; i < 3000; ++i) {
+        char key[15] = {0};
+        char* val = calloc(15, sizeof(char));
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        hashmap_set_alt(&h, key, val);
+    }
+
+    // test getting back NULL since it will try to free it for us
+    int errors = 0;
+    for (int i = 0; i < 3000; i+=2) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        void* v = hashmap_remove(&h, key);
+        errors += (v == NULL) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    // test not present what was removed
+    errors = 0;
+    for (int i = 0; i < 3000; i+=2) {
+        char key[15] = {0};
+        sprintf(key, "%d", i);
+        void* v = hashmap_remove(&h, key);
+        errors += (v == NULL) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+
+    // test present what was left
+    errors = 0;
+    for (int i = 1; i < 3000; i+=2) {
+        char key[15] = {0};
+        char val[15] = {0};
+        sprintf(key, "%d", i);
+        sprintf(val, "%d-v", i);
+        void* v = hashmap_get(&h, key);
+        errors += (v != NULL && strcmp(v, val) == 0) ? 0 : 1;
+    }
+    mu_assert_int_eq(0, errors);
+}
+
 /*******************************************************************************
 *   Test Keys
 *******************************************************************************/
@@ -337,6 +381,7 @@ MU_TEST_SUITE(test_suite) {
 
     /* remove */
     MU_RUN_TEST(test_hashmap_remove);
+    MU_RUN_TEST(test_hashmap_remove_mallocd);
 
     /* keys */
     MU_RUN_TEST(test_hashmap_keys);
