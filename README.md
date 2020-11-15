@@ -1,4 +1,10 @@
 # hashmap
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/v/release/barrust/hashmap.svg)](https://github.com/barrust/hashmap/releases)
+[![Build Status](https://travis-ci.com/barrust/hashmap.svg?branch=master)](https://travis-ci.com/barrust/hashmap)
+[![codecov](https://codecov.io/gh/barrust/hashmap/branch/master/graph/badge.svg)](https://codecov.io/gh/barrust/hashmap)
+
 Hashmap implementation written in **C**
 
 Hashmaps are a key value store with quick look up times. The hashmap_stats()
