@@ -22,7 +22,7 @@ void success_or_failure(int res);
 
 
 
-int main(int argc, char **argv) {
+int main() {
     printf("Testing Hashmap version %s\n\n", hashmap_get_version());
 
     int num_els = 500000; //8000000;

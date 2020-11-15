@@ -3,7 +3,7 @@
 ***     Author: Tyler Barrus
 ***     email:  barrust@gmail.com
 ***
-***     Version: 0.8.0
+***     Version: 0.8.1
 ***
 ***     License: MIT 2015
 ***
@@ -14,7 +14,6 @@
 #include "hashmap.h"
 
 
-#define INITIAL_NUM_ELEMENTS 1024
 #define MAX_FULLNESS_PERCENT 0.25       /* arbitrary */
 
 
@@ -24,7 +23,7 @@
 static uint64_t default_hash(const char *key);
 static inline float __get_fullness(HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
-static int   __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function);
+static int   __allocate_hashmap(HashMap *h, uint64_t num_els);
 static int   __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null);
 static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
@@ -36,9 +35,6 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 /*******************************************************************************
 ***        FUNCTION DEFINITIONS
 *******************************************************************************/
-int hashmap_init(HashMap *h) {
-    return hashmap_init_alt(h, INITIAL_NUM_ELEMENTS, NULL);
-}
 
 int hashmap_init_alt(HashMap *h,  uint64_t num_els, hashmap_hash_function hash_function) {
     h->nodes = (hashmap_node**) calloc(num_els, sizeof(hashmap_node*));
@@ -195,7 +191,7 @@ static uint64_t default_hash(const char *key) { // FNV-1a hash (http://www.isthe
     return h;
 }
 
-static int  __allocate_hashmap(HashMap *h, uint64_t num_els, hashmap_hash_function hash_function) {
+static int  __allocate_hashmap(HashMap *h, uint64_t num_els) {
     hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
     if (h->nodes == NULL) {return HASHMAP_FAILURE;}
     h->nodes = tmp;
@@ -237,7 +233,7 @@ static int __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null) {
 static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error) {
     *error = 0; // no errors
     uint64_t idx = *i = hash % h->number_nodes;
-    int len = strlen(key);
+    size_t len = strlen(key);
     while (1) {
         if (h->nodes[*i] == NULL) { //not found
             return NULL;
@@ -258,7 +254,7 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
     // check to see if we need to expand the hashmap
     if (__get_fullness(h) >= MAX_FULLNESS_PERCENT) {
         uint64_t num_nodes = h->number_nodes;
-        __allocate_hashmap(h, num_nodes * 2, h->hash_function);
+        __allocate_hashmap(h, num_nodes * 2);
     }
     // get the hash value
     uint64_t hash = h->hash_function(key);  // TODO: move out of this function to better parallelize
@@ -266,15 +262,19 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
     int error;
     void * tmp = __get_node(h, key, hash, &i, &error);
     if (tmp == NULL && error == -1) {
-        printf("Error: Unable to insert due to the hashmap being full\n");
+        fprintf(stderr, "Error: Unable to insert due to the hashmap being full\n");
+        return NULL;
     } else  if (tmp != NULL) {
-        if (h->nodes[i]->mallocd == 0) {free(h->nodes[i]->value);}
-        h->nodes[i]->value = value;
+        if (h->nodes[i]->mallocd != 0) {
+            void* tmp = h->nodes[i]->value;
+            h->nodes[i]->value = value;
+            return tmp;
+        } else {
+            free(h->nodes[i]->value);
+            h->nodes[i]->value = value;
+        }
     } else {
         __assign_node(h, key, value, mallocd, i, hash);
-    }
-    if (tmp == NULL && error == -1) {
-        return NULL;
     }
     return value;
 }
@@ -295,12 +295,13 @@ static inline float __get_fullness(HashMap *h) {
 }
 
 static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
-    uint64_t i, sum = 0, max = 0, cur = 0, wc = 0, sum_used = 0, j = 0;
+    uint64_t sum = 0, max = 0, wc = 0, sum_used = 0;
     unsigned int hash_col = 0, idx_col = 0;
     if (h->used_nodes != 0) {
+        uint64_t j = 0, cur = 0;
         uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
         uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
-        for (i = 0; i < h->number_nodes; ++i) {
+        for (uint64_t i = 0; i < h->number_nodes; ++i) {
             if (h->nodes[i] != NULL) {
                 ++cur;
                 uint64_t idx = h->nodes[i]->hash % h->number_nodes;
@@ -325,7 +326,7 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
         __merge_sort(idxs, h->used_nodes);
 
         // then do some maths to see if there are actual collisions
-        for (i = 0; i < h->used_nodes - 1; ++i) {
+        for (uint64_t i = 0; i < h->used_nodes - 1; ++i) {
             if(hashes[i] == hashes[i + 1]) {
                 ++hash_col;
             }
