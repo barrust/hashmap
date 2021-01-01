@@ -50,7 +50,7 @@ int main() {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
         float t = i * 1.3;
-        float *v = hashmap_get(&h, key);
+        float *v = (float*)hashmap_get(&h, key);
         if (v == NULL) {
             res = -1;
         } else if (*v != t) {
@@ -65,7 +65,7 @@ int main() {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
         float t = i * 1.5;
-        float *v = hashmap_get(&h, key);  // ensure this works correctly
+        float *v = (float*)hashmap_get(&h, key);  // ensure this works correctly
         *v = i * 1.5;
         float *z = hashmap_set_float(&h, key, *v);
         if (z == NULL) {
@@ -82,7 +82,7 @@ int main() {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
         float t = i * 1.5;
-        float *v = hashmap_get(&h, key);
+        float *v = (float*)hashmap_get(&h, key);
         if (v == NULL) {
             res = -1;
         } else if (*v != t) {

@@ -1,3 +1,5 @@
+#ifndef BARRUST_HASH_MAP_H__
+#define BARRUST_HASH_MAP_H__
 /*******************************************************************************
 ***
 ***     Author: Tyler Barrus
@@ -12,8 +14,9 @@
 ***
 *******************************************************************************/
 
-#ifndef BARRUST_HASH_MAP_H__
-#define BARRUST_HASH_MAP_H__
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <inttypes.h>       /* PRIu64 */
 
@@ -113,7 +116,7 @@ float* hashmap_set_float(HashMap *h, const char *key, float value);
 
 /*  Easily add a double, this will malloc everything for the user and will
     signal to de-allocate the memory on destruction */
-double* hashmap_set_double(HashMap *h, const char *key, float value);
+double* hashmap_set_double(HashMap *h, const char *key, double value);
 
 /*  Easily add a string, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
@@ -121,6 +124,10 @@ char* hashmap_set_string(HashMap *h, const char *key, char *value);
 
 /* Return the fullness of the hashmap */
 float hashmap_get_fullness(HashMap *h);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 
 #endif /* END HASHMAP HEADER */

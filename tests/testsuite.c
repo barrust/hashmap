@@ -65,7 +65,7 @@ MU_TEST(test_hashmap_set_double) {
 }
 
 MU_TEST(test_hashmap_set_string) {
-    char* t = hashmap_set_string(&h, "key", "another value");
+    char* t = hashmap_set_string(&h, "key", (char*)"another value");
     mu_assert_string_eq(t, "another value");
     mu_assert_int_eq(1, hashmap_number_keys(h));
 }
@@ -78,24 +78,24 @@ MU_TEST(test_hashmap_set) {
     // hashmap_set does not auto remove the item from the stack (free)
     char v[] = "this is a test";
     void* t = hashmap_set(&h, "test", v);
-    mu_assert_string_eq(v, t);
+    mu_assert_string_eq(v, (char*)t);
 
     char q[] = "THIS IS STILL A TEST";
     t = hashmap_set(&h, "test", q);
-    mu_assert_string_eq(v, t);  // it gives you the old value back!
+    mu_assert_string_eq(v, (char*)t);  // it gives you the old value back!
 }
 
 MU_TEST(test_hashmap_set_alt) {
     // hashmap_set_alt auto tries to free memory when it is cleaned up!
-    char* v = calloc(25, sizeof(char));
+    char* v = (char*)calloc(25, sizeof(char));
     sprintf(v, "this is a test");
     void* t = hashmap_set_alt(&h, "test", v);
-    mu_assert_string_eq(v, t);
+    mu_assert_string_eq(v, (char*)t);
 
-    char* q = calloc(25, sizeof(char));
+    char* q = (char*)calloc(25, sizeof(char));
     sprintf(q, "THIS IS STILL A TEST");
     t = hashmap_set_alt(&h, "test", q);
-    mu_assert_string_eq(q, t);  // it gives you the old value back!
+    mu_assert_string_eq(q, (char*)t);  // it gives you the old value back!
 }
 
 
@@ -105,7 +105,7 @@ MU_TEST(test_hashmap_set_alt) {
 MU_TEST(test_hashmap_get) {
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char val[15] = {0};
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         hashmap_set(&h, key, val);
@@ -119,7 +119,8 @@ MU_TEST(test_hashmap_get) {
         sprintf(key, "%d", i);
         sprintf(tmp, "%d-v", i);
         void* val = hashmap_get(&h, key);
-        errors += (strcmp(tmp, val) == 0) ? 0 : 1;
+        errors += (strcmp(tmp, (char*)val) == 0) ? 0 : 1;
+        free(val); // cleanup
     }
     mu_assert_int_eq(0, errors);
 }
@@ -127,7 +128,7 @@ MU_TEST(test_hashmap_get) {
 MU_TEST(test_hashmap_get_changed) {
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char val[15] = {0};
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         hashmap_set(&h, key, val);
@@ -135,10 +136,11 @@ MU_TEST(test_hashmap_get_changed) {
 
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char val[15] = {0};
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i + 100);
-        hashmap_set(&h, key, val);
+        void* old = hashmap_set(&h, key, val);
+        free(old);
     }
 
     /* now test things out! */
@@ -149,7 +151,8 @@ MU_TEST(test_hashmap_get_changed) {
         sprintf(key, "%d", i);
         sprintf(tmp, "%d-v", i + 100);  // this should be what we pull out
         void* val = hashmap_get(&h, key);
-        errors += (strcmp(tmp, val) == 0) ? 0 : 1;
+        errors += (strcmp(tmp, (char*)val) == 0) ? 0 : 1;
+        free(val); // cleanup
     }
     mu_assert_int_eq(0, errors);
 }
@@ -175,7 +178,7 @@ MU_TEST(test_hashmap_get_not_found) {
 MU_TEST(test_hashmap_remove) {
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char val[15] = {0};
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         hashmap_set(&h, key, val);
@@ -189,7 +192,8 @@ MU_TEST(test_hashmap_remove) {
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         void* v = hashmap_remove(&h, key);
-        errors += (strcmp(val, v) == 0) ? 0 : 1;
+        errors += (strcmp(val, (char*)v) == 0) ? 0 : 1;
+        free(v); // cleanup
     }
     mu_assert_int_eq(0, errors);
 
@@ -211,7 +215,8 @@ MU_TEST(test_hashmap_remove) {
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         void* v = hashmap_get(&h, key);
-        errors += (v != NULL && strcmp(v, val) == 0) ? 0 : 1;
+        errors += (v != NULL && strcmp((char*)v, val) == 0) ? 0 : 1;
+        free(v); // cleanup
     }
     mu_assert_int_eq(0, errors);
 }
@@ -219,7 +224,7 @@ MU_TEST(test_hashmap_remove) {
 MU_TEST(test_hashmap_remove_mallocd) {
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char* val = calloc(15, sizeof(char));
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         hashmap_set_alt(&h, key, val);
@@ -255,7 +260,7 @@ MU_TEST(test_hashmap_remove_mallocd) {
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         void* v = hashmap_get(&h, key);
-        errors += (v != NULL && strcmp(v, val) == 0) ? 0 : 1;
+        errors += (v != NULL && strcmp((char*)v, val) == 0) ? 0 : 1;
     }
     mu_assert_int_eq(0, errors);
 }
@@ -267,7 +272,7 @@ MU_TEST(test_hashmap_keys) {
     // add some values
     for (int i = 0; i < 3000; ++i) {
         char key[15] = {0};
-        char val[15] = {0};
+        char* val = (char*)calloc(15, sizeof(char));
         sprintf(key, "%d", i);
         sprintf(val, "%d-v", i);
         hashmap_set(&h, key, val);
@@ -282,7 +287,8 @@ MU_TEST(test_hashmap_keys) {
         int key_i = atoi(keys[i]);
         char val_c[15] = {0};
         sprintf(val_c, "%d-v", key_i);
-        errors += (val != NULL && strcmp(val, val_c) == 0) ? 0 : 1;
+        errors += (val != NULL && strcmp((char*)val, val_c) == 0) ? 0 : 1;
+        free(val);
     }
     mu_assert_int_eq(0, errors);
 

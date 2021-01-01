@@ -37,7 +37,7 @@ static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 *******************************************************************************/
 
 int hashmap_init_alt(HashMap *h,  uint64_t num_els, hashmap_hash_function hash_function) {
-    h->nodes = (hashmap_node**) calloc(num_els, sizeof(hashmap_node*));
+    h->nodes = (hashmap_node**)calloc(num_els, sizeof(hashmap_node*));
     if (h->nodes == NULL) {return HASHMAP_FAILURE;}
     h->number_nodes = num_els;
     h->used_nodes = 0;
@@ -130,12 +130,12 @@ void hashmap_stats(HashMap *h) {
 }
 
 char** hashmap_keys(HashMap *h) {
-    char** keys = calloc(h->used_nodes, sizeof(char*));
+    char** keys = (char**)calloc(h->used_nodes, sizeof(char*));
     uint64_t i, j = 0;
     for (i = 0; i < h->number_nodes; ++i) {
         if (h->nodes[i] != NULL) {
             int len = strlen(h->nodes[i]->key);
-            keys[j] = calloc(len + 1, sizeof(char));
+            keys[j] = (char*)calloc(len + 1, sizeof(char));
             memcpy(keys[j], h->nodes[i]->key, len);
             ++j;
         }
@@ -148,34 +148,34 @@ char** hashmap_keys(HashMap *h) {
 *******************************************************************************/
 
 int* hashmap_set_int(HashMap *h, const char *key, int value) {
-    int *ptr = malloc(sizeof(int));
+    int *ptr = (int*)malloc(sizeof(int));
     *ptr = value;
-    return __hashmap_set(h, key, ptr, 0);
+    return (int*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
 long* hashmap_set_long(HashMap *h, const char *key, long value) {
-    long *ptr = malloc(sizeof(long));
+    long *ptr = (long*)malloc(sizeof(long));
     *ptr = value;
-    return __hashmap_set(h, key, ptr, 0);
+    return (long*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
 char* hashmap_set_string(HashMap *h, const char *key, char *value) {
     int len = strlen(value);
-    char *ptr = calloc(len + 1, sizeof(char));
+    char *ptr = (char*)calloc(len + 1, sizeof(char));
     memcpy(ptr, value, len);
-    return __hashmap_set(h, key, ptr, 0);
+    return (char*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
 float* hashmap_set_float(HashMap *h, const char *key, float value) {
-    float *ptr = malloc(sizeof(float));
+    float *ptr = (float*)malloc(sizeof(float));
     *ptr = value;
-    return __hashmap_set(h, key, ptr, 0);
+    return (float*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
-double* hashmap_set_double(HashMap *h, const char *key, float value) {
-    double *ptr = malloc(sizeof(double));
+double* hashmap_set_double(HashMap *h, const char *key, double value) {
+    double *ptr = (double*)malloc(sizeof(double));
     *ptr = value;
-    return __hashmap_set(h, key, ptr, 0);
+    return (double*)__hashmap_set(h, key, ptr, 0);
 }
 
 /*******************************************************************************
@@ -192,7 +192,7 @@ static uint64_t default_hash(const char *key) { // FNV-1a hash (http://www.isthe
 }
 
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els) {
-    hashmap_node** tmp = realloc(h->nodes, num_els * sizeof(hashmap_node*));
+    hashmap_node** tmp = (hashmap_node**)realloc(h->nodes, num_els * sizeof(hashmap_node*));
     if (h->nodes == NULL) {return HASHMAP_FAILURE;}
     h->nodes = tmp;
     uint64_t orig_num_els = h->number_nodes;
@@ -281,8 +281,8 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
 
 static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash) {
     int len = strlen(key);
-    h->nodes[i] = malloc(sizeof(hashmap_node));
-    h->nodes[i]->key = calloc(len + 1, sizeof(char));
+    h->nodes[i] = (hashmap_node*)malloc(sizeof(hashmap_node));
+    h->nodes[i]->key = (char*)calloc(len + 1, sizeof(char));
     memcpy(h->nodes[i]->key, key, len);
     h->nodes[i]->value = value;
     h->nodes[i]->hash = hash;
@@ -299,8 +299,8 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
     unsigned int hash_col = 0, idx_col = 0;
     if (h->used_nodes != 0) {
         uint64_t j = 0, cur = 0;
-        uint64_t *hashes = calloc(h->used_nodes, sizeof(uint64_t));
-        uint64_t *idxs = calloc(h->used_nodes, sizeof(uint64_t));
+        uint64_t *hashes = (uint64_t*)calloc(h->used_nodes, sizeof(uint64_t));
+        uint64_t *idxs = (uint64_t*)calloc(h->used_nodes, sizeof(uint64_t));
         for (uint64_t i = 0; i < h->number_nodes; ++i) {
             if (h->nodes[i] != NULL) {
                 ++cur;
@@ -367,7 +367,7 @@ static void __merge_sort(uint64_t *arr, uint64_t length) {
 
 
 static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid) {
-    uint64_t *tmp = malloc((length) * sizeof(uint64_t));
+    uint64_t *tmp = (uint64_t*)malloc((length) * sizeof(uint64_t));
     uint64_t l = 0, r = mid, i = 0;
     while(l < mid && r < length) { // sort until one half is empty
         tmp[i++] = (arr[l] > arr[r]) ? arr[r++] : arr[l++];
