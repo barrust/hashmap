@@ -1,5 +1,5 @@
 CC=gcc
-COMPFLAGS=-Wall -Wpedantic -Winline -Wextra
+COMPFLAGS=-Wall -Wpedantic -Winline -Wextra -Wno-long-long
 DISTDIR=dist
 SRCDIR=src
 TESTDIR=tests
@@ -20,9 +20,12 @@ release: all
 sanitize: COMPFLAGS += -fsanitize=undefined
 sanitize: test
 
-test: COMPFLAGS += -coverage
+test: COMPFLAGS += --coverage
 test: hashmap
 	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g
+
+runtests:
+	@ if [ -f "./$(DISTDIR)/test" ]; then ./$(DISTDIR)/test; fi
 
 clean:
 	if [ -f "./$(DISTDIR)/hashmap.o" ]; then rm -r ./$(DISTDIR)/hashmap.o; fi
