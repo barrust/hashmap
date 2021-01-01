@@ -60,14 +60,13 @@ code, the following should suffice.
 int main(int argc, char** argv) {
     HashMap h;
     hashmap_init(&h);
-    int i;
 
-    #pragma omp parallel for private(i)
-    for (i = 0; i < 500000; i++) {
+    #pragma omp parallel for
+    for (int i = 0; i < 500000; i++) {
         char key[KEY_LEN] = {0};
         sprintf(key, "%d", i);
 
-        #pragma omp critical (set_lock)
+        #pragma omp critical (hashmap_set_lock)
         {
             hashmap_add_int(&h, key, i);
         }

@@ -22,7 +22,7 @@ sanitize: test
 
 test: COMPFLAGS += --coverage
 test: hashmap
-	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g
+	$(CC) $(DISTDIR)/hashmap.o $(TESTDIR)/testsuite.c $(CCFLAGS) $(COMPFLAGS) -o ./$(DISTDIR)/test -g -lm
 
 runtests:
 	@ if [ -f "./$(DISTDIR)/test" ]; then ./$(DISTDIR)/test; fi
