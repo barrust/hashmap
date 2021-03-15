@@ -193,7 +193,7 @@ static uint64_t default_hash(const char *key) { // FNV-1a hash (http://www.isthe
 
 static int  __allocate_hashmap(HashMap *h, uint64_t num_els) {
     hashmap_node** tmp = (hashmap_node**)realloc(h->nodes, num_els * sizeof(hashmap_node*));
-    if (h->nodes == NULL) {return HASHMAP_FAILURE;}
+    if (tmp == NULL) {return HASHMAP_FAILURE;}
     h->nodes = tmp;
     uint64_t orig_num_els = h->number_nodes;
     for (uint64_t i = orig_num_els; i < num_els; ++i) {
@@ -266,9 +266,9 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
         return NULL;
     } else  if (tmp != NULL) {
         if (h->nodes[i]->mallocd != 0) {
-            void* tmp = h->nodes[i]->value;
+            void* v = h->nodes[i]->value;
             h->nodes[i]->value = value;
-            return tmp;
+            return v;
         } else {
             free(h->nodes[i]->value);
             h->nodes[i]->value = value;
@@ -304,15 +304,15 @@ static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, 
         for (uint64_t i = 0; i < h->number_nodes; ++i) {
             if (h->nodes[i] != NULL) {
                 ++cur;
-                uint64_t idx = h->nodes[i]->hash % h->number_nodes;
-                uint64_t O = __calc_big_o(h->number_nodes, i, idx);
+                uint64_t _idx = h->nodes[i]->hash % h->number_nodes;
+                uint64_t O = __calc_big_o(h->number_nodes, i, _idx);
                 sum_used += O;
                 sum += O;
                 if (O > max) {
                     max = O;
                 }
                 hashes[j] = h->nodes[i]->hash;
-                idxs[j] = idx;
+                idxs[j] = _idx;
                 ++j;
             } else {
                 sum += 1;
