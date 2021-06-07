@@ -1,8 +1,6 @@
 ## Current Version
 
-* ***BACKWARD INCOMPATIBLE CHANGES***
- * Update to the FNV_1a hash function **NOTE:** Breaks backwards compatibility with
- previously exported blooms using the default hash!
+* Updated the FNV-1a seed value
 
 ### Version 0.8.1
 
