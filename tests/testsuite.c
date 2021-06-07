@@ -335,12 +335,12 @@ MU_TEST(test_hashmap_stat) {
     Number Nodes: 262144\n\
     Used Nodes: 55000\n\
     Fullness: 20.980835%\n\
-    Average O(n): 1.038040\n\
-    Average Used O(n): 1.181309\n\
-    Max O(n): 7\n\
-    Max Consecutive Buckets Used: 10\n\
+    Average O(n): 1.041344\n\
+    Average Used O(n): 1.197055\n\
+    Max O(n): 9\n\
+    Max Consecutive Buckets Used: 11\n\
     Number Hash Collisions: 0\n\
-    Number Index Collisions: 7328\n\
+    Number Index Collisions: 7656\n\
     Size on disk (bytes): 3857184\n", buffer);
 }
 

@@ -1,5 +1,9 @@
 ## Current Version
 
+* ***BACKWARD INCOMPATIBLE CHANGES***
+ * Update to the FNV_1a hash function **NOTE:** Breaks backwards compatibility with
+ previously exported blooms using the default hash!
+
 ### Version 0.8.1
 
 * Fix `hashmap_set` to ensure it returns the correct value for freeing as necessary
