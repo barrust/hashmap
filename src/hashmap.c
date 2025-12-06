@@ -260,7 +260,7 @@ static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallo
     uint64_t hash = h->hash_function(key);  // TODO: move out of this function to better parallelize
     uint64_t i;
     int error;
-    void * tmp = __get_node(h, key, hash, &i, &error);
+    const void * tmp = __get_node(h, key, hash, &i, &error);
     if (tmp == NULL && error == -1) {
         fprintf(stderr, "Error: Unable to insert due to the hashmap being full\n");
         return NULL;
