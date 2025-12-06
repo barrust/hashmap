@@ -21,14 +21,14 @@
 ***        PRIVATE FUNCTIONS
 *******************************************************************************/
 static uint64_t default_hash(const char *key);
-static inline float __get_fullness(HashMap *h);
+static inline float __get_fullness(const HashMap *h);
 static inline int __calc_big_o(uint64_t num_nodes, uint64_t i, uint64_t idx);
 static int   __allocate_hashmap(HashMap *h, uint64_t num_els);
 static int   __relayout_nodes(HashMap *h, uint64_t loc, short end_on_null);
 static void* __get_node(HashMap *h, const char *key, uint64_t hash, uint64_t *i, int *error);
 static void  __assign_node(HashMap *h, const char *key, void *value, short mallocd, uint64_t i, uint64_t hash);
 static void* __hashmap_set(HashMap *h, const char *key, void *value, short mallocd);
-static void  __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
+static void  __calc_stats(const HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx);
 static void __merge_sort(uint64_t *arr, uint64_t length);
 static void __m_sort_merge(uint64_t *arr, uint64_t length, uint64_t mid);
 
@@ -101,11 +101,11 @@ void* hashmap_remove(HashMap *h, const char *key) {
     return ret;
 }
 
-float hashmap_get_fullness(HashMap *h) {
+float hashmap_get_fullness(const HashMap *h) {
     return __get_fullness(h) * 100.0;
 }
 
-void hashmap_stats(HashMap *h) {
+void hashmap_stats(const HashMap *h) {
     uint64_t max, wc;
     float avg, avg_used;
     unsigned int hc, ic;
@@ -129,7 +129,7 @@ void hashmap_stats(HashMap *h) {
     __get_fullness(h) * 100.0, avg, avg_used, max, wc, hc, ic, size);
 }
 
-char** hashmap_keys(HashMap *h) {
+char** hashmap_keys(const HashMap *h) {
     char** keys = (char**)calloc(h->used_nodes, sizeof(char*));
     uint64_t i, j = 0;
     for (i = 0; i < h->number_nodes; ++i) {
@@ -147,32 +147,32 @@ char** hashmap_keys(HashMap *h) {
 ***        UTILITY INSERTS
 *******************************************************************************/
 
-int* hashmap_set_int(HashMap *h, const char *key, int value) {
+int* hashmap_set_int(HashMap *h, const char *key, const int value) {
     int *ptr = (int*)malloc(sizeof(int));
     *ptr = value;
     return (int*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
-long* hashmap_set_long(HashMap *h, const char *key, long value) {
+long* hashmap_set_long(HashMap *h, const char *key, const long value) {
     long *ptr = (long*)malloc(sizeof(long));
     *ptr = value;
     return (long*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
-char* hashmap_set_string(HashMap *h, const char *key, char *value) {
+char* hashmap_set_string(HashMap *h, const char *key, const char *value) {
     int len = strlen(value);
     char *ptr = (char*)calloc(len + 1, sizeof(char));
     memcpy(ptr, value, len);
     return (char*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
-float* hashmap_set_float(HashMap *h, const char *key, float value) {
+float* hashmap_set_float(HashMap *h, const char *key, const float value) {
     float *ptr = (float*)malloc(sizeof(float));
     *ptr = value;
     return (float*)__hashmap_set(h, key, (void*)ptr, 0);
 }
 
-double* hashmap_set_double(HashMap *h, const char *key, double value) {
+double* hashmap_set_double(HashMap *h, const char *key, const double value) {
     double *ptr = (double*)malloc(sizeof(double));
     *ptr = value;
     return (double*)__hashmap_set(h, key, ptr, 0);
@@ -290,11 +290,11 @@ static void  __assign_node(HashMap *h, const char *key, void *value, short mallo
     ++h->used_nodes;
 }
 
-static inline float __get_fullness(HashMap *h) {
+static inline float __get_fullness(const HashMap *h) {
     return h->used_nodes / (float) h->number_nodes;
 }
 
-static void __calc_stats(HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
+static void __calc_stats(const HashMap *h, uint64_t *worst_case, uint64_t *max_big_o, float *avg_big_o, float *avg_used_big_o, unsigned int *hash, unsigned int *idx) {
     uint64_t sum = 0, max = 0, wc = 0, sum_used = 0;
     unsigned int hash_col = 0, idx_col = 0;
     if (h->used_nodes != 0) {
