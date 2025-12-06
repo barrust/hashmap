@@ -97,33 +97,31 @@ void* hashmap_remove(HashMap *h, const char *key);
 
 /*  Returns an array of all keys in the hashmap.
     NOTE: It is up to the caller to free the array returned. */
-char** hashmap_keys(HashMap *h);
+char** hashmap_keys(const HashMap *h);
 
 /* Prints out some basic stats about the hashmap */
-void hashmap_stats(HashMap *h);
+void hashmap_stats(const HashMap *h);
 
 /*  Easily add an int, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-int* hashmap_set_int(HashMap *h, const char *key, int value);
+int* hashmap_set_int(HashMap *h, const char *key, const int value);
 
 /*  Easily add a long, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-long* hashmap_set_long(HashMap *h, const char *key, long value);
-
+long* hashmap_set_long(HashMap *h, const char *key, const long value);
 /*  Easily add a float, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-float* hashmap_set_float(HashMap *h, const char *key, float value);
+float* hashmap_set_float(HashMap *h, const char *key, const float value);
 
 /*  Easily add a double, this will malloc everything for the user and will
     signal to de-allocate the memory on destruction */
-double* hashmap_set_double(HashMap *h, const char *key, double value);
-
+double* hashmap_set_double(HashMap *h, const char *key, const double value);
 /*  Easily add a string, this will malloc everything for the user and will signal
     to de-allocate the memory on destruction */
-char* hashmap_set_string(HashMap *h, const char *key, char *value);
+char* hashmap_set_string(HashMap *h, const char *key, const char *value);
 
 /* Return the fullness of the hashmap */
-float hashmap_get_fullness(HashMap *h);
+float hashmap_get_fullness(const HashMap *h);
 
 #ifdef __cplusplus
 } // extern "C"
